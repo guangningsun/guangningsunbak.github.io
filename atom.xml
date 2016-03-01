@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[单机部署Ceph实验过程]]></title>
+  <title><![CDATA[Adolph孙广宁的博客]]></title>
   <link href="http://guangningsun.github.io/atom.xml" rel="self"/>
   <link href="http://guangningsun.github.io/"/>
-  <updated>2016-03-01T18:32:33+08:00</updated>
+  <updated>2016-03-01T18:41:57+08:00</updated>
   <id>http://guangningsun.github.io/</id>
   <author>
     <name><![CDATA[Guangning Sun]]></name>
