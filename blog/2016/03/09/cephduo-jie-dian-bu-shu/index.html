@@ -1,0 +1,310 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>ceph多节点部署 - Adolph孙广宁的博客</title>
+	<meta name="author" content="Guangning Sun">
+
+	
+	<meta name="description" content="实验环境 VMWare 虚拟4台 centos7.1 测试机
+ceph osd不支持操作系统所在挂载盘，需要新挂载盘 并格式化xfs 并按照配置文件创建存储目录
+查看 /var/lib/ceph/osd/ceph-* 官方文档推荐用ceph-depoly 半自动化部署工具，详细部署过程后续补充 &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Adolph孙广宁的博客" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Adolph孙广宁的博客</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.baidu.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:guangningsun.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.baidu.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:guangningsun.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Ceph多节点部署</h2>
+	<div class="entry-content"><h5>实验环境</h5>
+
+<hr />
+
+<ul>
+<li>VMWare 虚拟4台 centos7.1 测试机</li>
+<li>ceph osd不支持操作系统所在挂载盘，需要新挂载盘 并格式化xfs 并按照配置文件创建存储目录</li>
+<li><p>查看 /var/lib/ceph/osd/ceph-*</p>
+
+<p> 官方文档推荐用ceph-depoly 半自动化部署工具，详细部署过程后续补充</p>
+
+<p> 但部署过程中出现错误较多，所以改为先手动配置</p></li>
+<li><p>ceph-deploy install &ndash;rgw nodename 安装ceph gw并可更新ceph版本</p></li>
+</ul>
+
+
+<h5>打通各节点的ssh机器互信</h5>
+
+<ul>
+<li><p>ssh-keygen -t rsa -f .ssh/id_rsa -P &lsquo;&rsquo;</p>
+
+<p>  此处一路回车并没有设置验证码，生产可能并不允许。</p></li>
+</ul>
+
+
+<h6>向被授权的主机上拷贝</h6>
+
+<ul>
+<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#109;&#97;&#x69;&#x6c;&#116;&#111;&#58;&#114;&#111;&#x6f;&#x74;&#64;&#x31;&#x37;&#50;&#46;&#50;&#x34;&#x2e;&#48;&#x2e;&#x31;&#51;">&#114;&#111;&#x6f;&#x74;&#64;&#49;&#x37;&#x32;&#46;&#50;&#52;&#x2e;&#48;&#46;&#x31;&#51;</a></li>
+</ul>
+
+
+<h6>安装ntpdate</h6>
+
+<ul>
+<li>yum -y install ntpdate</li>
+</ul>
+
+
+<h6>开始同步时间</h6>
+
+<ul>
+<li>ntpdate time.windows.com</li>
+</ul>
+
+
+<h6>#修改每台机器的主机名 (hostname)  ( mon,mds,osd,client 都必须设置 )</h6>
+
+<hr />
+
+<pre><code>    echo 192.168.28.128 ceph-mon &gt;&gt; /etc/hosts
+
+    echo 192.168.28.129 ceph-osd0 &gt;&gt; /etc/hosts
+
+    echo 192.168.28.130 ceph-osd1 &gt;&gt; /etc/hosts
+
+    echo 192.168.28.131 ceph-osd2 &gt;&gt; /etc/hosts
+</code></pre>
+
+<h6>yum更新，安装相关依赖包(适用于mon,mds,osd)</h6>
+
+<hr />
+
+<pre><code>    rpm --import 'https://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/release.asc'
+    rpm -Uvh http://mirrors.yun-idc.com/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+    yum install snappy leveldb gdisk python-argparse gperftools-libs -y
+    rpm -Uvh http://ceph.com/rpm-dumpling/el7/noarch/ceph-release-1-0.el7.centos.noarch.rpm
+    yum install ceph-deploy -y
+    yum install ceph -y
+
+    yum install btrfs-progs           (适用于所有osd) 
+</code></pre>
+
+<h6>配置/etc/ceph/ceph.conf，  (适用于mon,mds,osd)</h6>
+
+<hr />
+
+<p>vi /etc/ceph/ceph.conf</p>
+
+<hr />
+
+<p>[global]</p>
+
+<p>public_network = 192.168.28.1/24</p>
+
+<p>pid_file = /var/run/ceph/$name.pid</p>
+
+<p>auth_cluster_required = none</p>
+
+<p>auth_service_required = none</p>
+
+<p>auth_client_required = none</p>
+
+<p>keyring = /etc/ceph/keyring.$name</p>
+
+<p>osd_pool_default_size = 1</p>
+
+<p>osd_pool_default_min_size = 1</p>
+
+<p>osd_pool_default_crush_rule = 0</p>
+
+<p>osd_crush_chooseleaf_type = 1</p>
+
+<p>[mon]</p>
+
+<p>mon_data = /var/lib/ceph/mon/$name</p>
+
+<p>mon_clock_drift_allowed = .15</p>
+
+<p>keyring = /etc/ceph/keyring.$name</p>
+
+<p>[mon.0]</p>
+
+<p>host = ceph-mon</p>
+
+<p>mon_addr = 192.168.28.129:6789</p>
+
+<p>[osd]</p>
+
+<p>osd_recovery_max_active = 5</p>
+
+<p>osd_mkfs_type = xfs</p>
+
+<p>keyring = /etc/ceph/keyring.$name</p>
+
+<p>[osd.0]</p>
+
+<p>host = ceph-osd0</p>
+
+<p>devs = /dev/sda3</p>
+
+<p>[osd.1]</p>
+
+<p>host = ceph-osd1</p>
+
+<p>devs = /dev/sda3</p>
+
+<p>[osd.2]</p>
+
+<p>host = ceph-osd2</p>
+
+<p>devs = /dev/sda3</p>
+
+<p>[client.radosgw.gateway]</p>
+
+<p>host = ceph-mon</p>
+
+<p>log file = /var/log/radosgw/client.radosgw.ustack.log</p>
+
+<h6>创建目录 ( osd )</h6>
+
+<hr />
+
+<pre><code>    mkdir -p /var/lib/ceph/osd/ceph-* 默认为该目录下存放数据，可以在[osd]中配置存放路径
+</code></pre>
+
+<h6>启动ceph(在mon上执行)</h6>
+
+<hr />
+
+<pre><code>    初始化：mkcephfs -a -c /etc/ceph/ceph.conf
+    此时数据目录下应为空
+    /etc/init.d/ceph -a start
+</code></pre>
+
+<h6>启动时遇到问题</h6>
+
+<hr />
+
+<pre><code>    遇到 Error ENOENT: osd.0 does not exist.  create it before updating the crush map
+    执行如下代码: ceph osd create
+    然后在执行   /etc/init.d/ceph -a start       既可完成（仍需清空数据目录）
+</code></pre>
+
+<h6>启动后健康检查</h6>
+
+<hr />
+
+<pre><code>ceph health      #也可以使用ceph -s命令查看状态  (如果返回的是HEALTH_OK，则代表成功！) 
+</code></pre>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+Mar 9th, 2016</div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		<a class="addthis_button_tweet"></a>
+		
+		
+		
+	</div>
+	
+</div>
+
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Guangning Sun
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+
+
+
+
+</body>
+</html>
