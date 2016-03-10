@@ -1,0 +1,425 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>ceph命令解析及使用 - Adolph孙广宁的博客</title>
+	<meta name="author" content="Guangning Sun">
+
+	
+	<meta name="description" content="ceph-deploy集群部署工具 功能一般安装在ceph-admin 机器上（实验系统全部装在mon节点） ceph-deploy new [initial-monitor-node(s)] 创建新cluster 不需要自己手动编写ceph.conf自动生成keyring ceph-deploy &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Adolph孙广宁的博客" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Adolph孙广宁的博客</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.baidu.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:guangningsun.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.baidu.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:guangningsun.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Ceph命令解析及使用</h2>
+	<div class="entry-content"><h2>ceph-deploy集群部署工具</h2>
+
+<hr />
+
+<p>功能一般安装在ceph-admin 机器上（实验系统全部装在mon节点）</p>
+
+<ul>
+<li><p>ceph-deploy new [initial-monitor-node(s)]</p>
+
+<pre><code>  创建新cluster 不需要自己手动编写ceph.conf自动生成keyring
+</code></pre></li>
+<li><p>ceph-deploy install [ceph-node] [ceph-node&hellip;]</p>
+
+<pre><code>  在远程节点安装ceph程序
+</code></pre></li>
+<li><p>ceph-deploy mds create node1 node2
+ ceph-deploy mds destory node1 node2</p>
+
+<pre><code> 在远程节点 创建和删除mds服务
+</code></pre></li>
+<li><p>ceph-deploy mon create-initial|add</p>
+
+<pre><code> 在远程节点 部署monitor和添加monitor节点
+</code></pre></li>
+<li><p>ceph-deploy gatherkeys node1 node2</p>
+
+<pre><code> 在安装新服务 osd mon时候 需要将权限密钥 聚集到新节点指定位置（安装 radosgw admin时会用到）
+</code></pre></li>
+<li><p>ceph-deploy osd prepare [ceph-node]:[dir-path]</p>
+
+<pre><code> 安装osd前准备检查目标节点状态并返回给用户
+</code></pre></li>
+<li><p>ceph-deploy osd create [ceph-node]:[dir-path]</p>
+
+<pre><code>  创建 osd  dir-path可以不写（查询osd tree时候回多增加一个osd节点）
+</code></pre></li>
+<li><p>ceph-deploy admin [admin-node][ceph-node&hellip;]</p>
+
+<pre><code>  把ceph.conf 和client.admin.keyring同时拷贝到目标节点
+</code></pre></li>
+<li><p>ceph-deploy purgedata [ceph-node][ceph-node&hellip;]</p>
+
+<pre><code> 删除目标节点/var/lib/ceph*数据，这样重新初始化集群的时候不需要手动删除和创建文件夹
+</code></pre></li>
+<li><p>ceph-deploy forgetkeys</p>
+
+<pre><code>  删除目标节点上所有密钥 
+</code></pre></li>
+</ul>
+
+
+<p>ceph osd pool ls detail</p>
+
+<h2>ceph 集群操作命令</h2>
+
+<pre><code>    ceph 主要用来手工维护集群和部署集群 提供了对osd、monitor、mds、pg等 的所有功能的命令行操作 -c ceph.conf -i infile -o outfile
+</code></pre>
+
+<ul>
+<li><p>ceph auth [ add | caps | del | export | get | get-key | get-or-create | get-or-create-key | import | list | print-key | print_key ] &hellip;</p></li>
+<li><p>ceph config-key [ del | exists | get | list | put ] &hellip;</p></li>
+<li><p>ceph df {detail}</p>
+
+<pre><code> 查看集群存储状况
+</code></pre></li>
+<li><p>ceph fs [ ls | new | reset | rm ] &hellip;</p>
+
+<pre><code>  管理 cephfs 文件系统命令
+</code></pre></li>
+<li><p>ceph fsid</p>
+
+<pre><code>  查看集群的fsid或uuid
+</code></pre></li>
+<li><p>ceph health {detail}</p>
+
+<pre><code>  查看集群健康状况
+</code></pre></li>
+<li><p>ceph heap [ dump | start_profiler | stop_profiler | release | stats ] &hellip;</p>
+
+<pre><code>  stats 查看堆存储状况
+  release 将heap所占用的RAM释放会系统
+
+  其它的未测试
+</code></pre></li>
+<li><p>ceph injectargs <injectedargs> [ <injectedargs>&hellip; ]</p>
+
+<pre><code>  将参数注入到Monitor中
+</code></pre></li>
+<li><p>ceph log <logtext> [ <logtext>&hellip; ]</p>
+
+<pre><code>  将日志整合到Monitor日志中
+</code></pre></li>
+<li><p>ceph mds [ add_data_pool | cluster_down | cluster_up | compat | deactivate | dump | fail | getmap | newfs | remove_data_pool | rm | rmfailed | set | set_max_mds | set_state | setmap | stat | stop | tell ] &hellip;</p></li>
+<li><p>ceph mon [ add | dump | getmap | remove | stat ] &hellip;</p>
+
+<pre><code>  增删查改mon
+  dump根据 map的版本号转存格式化的monmap
+  getmap 获取monmap
+</code></pre></li>
+<li><p>ceph mon_status</p>
+
+<pre><code>  查看mon 详细状态信息
+</code></pre></li>
+<li><p>ceph osd [ blacklist | blocked-by | create | deep-scrub | df | down | dump | erasure-code-profile | find | getcrushmap | getmap | getmaxosd | in | lspools | map | metadata | out | pause | perf | pg-temp | primary-affinity | primary-temp | repair | reweight | reweight-by-pg | rm | scrub | set | setcrushmap | setmaxosd  | stat | thrash | tree | unpause | unset ] &hellip;</p>
+
+<pre><code> blacklist 黑名单列表 ls
+ tree 获取osd树形结构
+ create 创建osd 根据 uuid需要自己输入
+ df osd数据使用列表
+ stat osd状态
+ rm 删除指定osd
+ lspools 列举pools列表
+ reweight 重新设置权重（权重值还未清楚分配原理）
+ in 手动标记osd状态 
+ down手动停止osd
+</code></pre></li>
+<li><p>ceph osd crush [ add | add-bucket | create-or-move | dump | get-tunable | link | move | remove | rename-bucket | reweight | reweight-all | reweight-subtree | rm | rule | set | set-tunable | show-tunables | tunables | unlink ] &hellip;</p>
+
+<pre><code>  一些crush算法的操作 （还未实验）
+</code></pre></li>
+<li><p>ceph osd pool [ create | delete | get | get-quota | ls | mksnap | rename | rmsnap | set | set-quota | stats ] &hellip;</p>
+
+<pre><code>  对pool的 
+  create增加 
+  delete删除 
+  get获取信息（并不清楚作用）
+  get-quota获取配额信息 
+  ls列表 
+  rename重命名 
+  stats状态 
+  set设置信息
+</code></pre></li>
+<li><p>ceph osd tier [ add | add-cache | cache-mode | remove | remove-overlay | set-overlay ] &hellip;</p>
+
+<pre><code>  未实验
+</code></pre></li>
+<li><p>ceph pg [ debug | deep-scrub | dump | dump_json | dump_pools_json | dump_stuck | force_create_pg | getmap | ls | ls-by-osd | ls-by-pool | ls-by-primary | map | repair | scrub | send_pg_creates | set_full_ratio | set_nearfull_ratio | stat ] &hellip;</p>
+
+<pre><code>  dump 获取集群转储信息（目前并不知道作用）
+  dump_json获取 placementgroup内所有json数据 
+  dump_pools_json 获取pool的json数据
+</code></pre></li>
+<li><p>ceph quorum [ enter | exit ]</p>
+
+<pre><code>  未实验
+</code></pre></li>
+<li><p>ceph quorum_status</p>
+
+<pre><code>  未实验
+</code></pre></li>
+<li><p>ceph report { <tags> [ <tags>&hellip; ] }</p>
+
+<pre><code>  未实验
+</code></pre></li>
+<li><p>ceph scrub</p>
+
+<pre><code>  未实验
+</code></pre></li>
+<li><p>ceph status</p>
+
+<pre><code>  ceph 集群状态 和 ceph -s -w 一个作用
+</code></pre></li>
+<li><p>ceph sync force {&ndash;yes-i-really-mean-it} {&ndash;i-know-what-i-am-doing}</p>
+
+<pre><code> 未实验
+</code></pre></li>
+<li><p>ceph tell <name (type.id)> <args> [<args>&hellip;]</p>
+
+<pre><code> 未实验
+</code></pre></li>
+<li><p>ceph version</p>
+
+<pre><code>  查看ceph版本
+</code></pre></li>
+</ul>
+
+
+<h2>Rados</h2>
+
+<p>对象存储工具</p>
+
+<ul>
+<li><p>-p pool, &ndash;pool pool</p>
+
+<pre><code>  选择要操作的数据池
+</code></pre></li>
+<li><p>-s snap, &ndash;snap snap</p>
+
+<pre><code>  从给定的poo中读取快照
+</code></pre></li>
+<li><p>-i infile</p></li>
+<li><p>-o outfile</p></li>
+<li><p>-c ceph.conf, &ndash;conf=ceph.conf</p>
+
+<pre><code>  选择配置文件位置
+</code></pre></li>
+<li><p>-m monaddress[:port]</p>
+
+<pre><code>链接指定的Monitor
+</code></pre></li>
+</ul>
+
+
+<h5>GLOBAL COMMANDS</h5>
+
+<ul>
+<li><p>lspools</p>
+
+<pre><code>列出所有对象池
+</code></pre></li>
+<li><p>df</p>
+
+<pre><code>  磁盘使用情况
+</code></pre></li>
+<li><p>mkpool</p>
+
+<pre><code>  创建对象池    
+</code></pre></li>
+<li><p>rmpool foo</p>
+
+<pre><code>  删除对象池 注意格式
+  rados rmpool foo foo --yes-i-really-really-mean-it foo
+</code></pre></li>
+</ul>
+
+
+<h5>POOL SPECIFIC COMMANDS</h5>
+
+<ul>
+<li><p>get name outfile</p>
+
+<pre><code>  通过对象名字 从集群中 将文件读取到指定目录
+
+  用例 rados get TestAdmin /opt/ning/1.txt --pool data
+</code></pre></li>
+<li><p>put name infile</p>
+
+<pre><code>  通过对象名称 将指定文件数据接入集群中
+
+  用例 rados put testobject /opt/ning/1.txt --pool data
+</code></pre></li>
+<li><p>rm name</p>
+
+<pre><code>  通过对象名称 移除对象
+</code></pre></li>
+</ul>
+
+
+<h6>暂未实验</h6>
+
+<hr />
+
+<pre><code>   listwatchers name
+          List the watchers of object name.
+
+   ls outfile
+          List objects in given pool and write to outfile.
+
+   lssnap List snapshots for given pool.
+
+   clonedata srcname dstname --object-locator key
+          Clone object byte data from srcname to dstname.  Both objects must be stored with the locator key key (usually either srcname or dstname).
+          Object attributes and omap keys are not copied or cloned.
+
+   mksnap foo
+          Create pool snapshot named foo.
+
+   rmsnap foo
+          Remove pool snapshot named foo.
+
+   bench seconds mode [ -b objsize ] [ -t threads ]
+          Benchmark for seconds. The mode can be write, seq, or rand. seq and rand are read benchmarks, either sequential or random. Before  running
+          one of the reading benchmarks, run a write benchmark with the --no-cleanup option. The default object size is 4 MB, and the default number      of simulated threads (parallel writes) is 16.
+
+   cleanup
+
+   listomapkeys name
+          List all the keys stored in the object map of object name.
+
+   listomapvals name
+          List all key/value pairs stored in the object map of object name.  The values are dumped in hexadecimal.
+
+   getomapval name key
+          Dump the hexadecimal value of key in the object map of object name.
+
+   setomapval name key value
+          Set the value of key in the object map of object name.
+
+   rmomapkey name key
+          Remove key from the object map of object name.
+
+   getomapheader name
+          Dump the hexadecimal value of the object map header of object name.
+
+   setomapheader name value
+          Set the value of the object map header of object name.
+</code></pre>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+Mar 10th, 2016</div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		<a class="addthis_button_tweet"></a>
+		
+		
+		
+	</div>
+	
+</div>
+
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Guangning Sun
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+
+
+
+
+</body>
+</html>
