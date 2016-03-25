@@ -1,0 +1,256 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>ceph librados api python调用测试 - Adolph孙广宁的博客</title>
+	<meta name="author" content="Guangning Sun">
+
+	
+	<meta name="description" content="ceph librados api python调用测试 删除接口 import sys,rados cluster = rados.Rados(conffile='/etc/ceph/ceph.conf')
+print "\nlibrados version: " + str(cluster. &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Adolph孙广宁的博客" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Adolph孙广宁的博客</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.baidu.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:guangningsun.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.baidu.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:guangningsun.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Ceph Librados Api Python调用测试</h2>
+	<div class="entry-content"><h1>ceph librados api python调用测试</h1>
+
+<h3>删除接口</h3>
+
+<pre><code>import sys,rados
+
+
+cluster = rados.Rados(conffile='/etc/ceph/ceph.conf')
+print "\nlibrados version: " + str(cluster.version())
+print "Will attempt to connect to: " + str(cluster.conf_get('mon initial members'))
+
+cluster.connect()
+print "\nCluster ID: " + cluster.get_fsid()
+
+ioctx = cluster.open_ioctx('data')
+
+print "------start delete----------------------"
+try:
+    print "read the content that is being deleted::::"+ioctx.read(sys.argv[1])
+    print "\nRemoving object "+sys.argv[1]
+    try:
+        ioctx.remove_object(sys.argv[1])
+    except:
+        print "no such object"
+except:
+    print "no such object"
+print "------delete end-------------------------"
+</code></pre>
+
+<hr />
+
+<h3>读取数据接口</h3>
+
+<pre><code>import sys,rados
+
+
+cluster = rados.Rados(conffile='/etc/ceph/ceph.conf')
+print "\nlibrados version: " + str(cluster.version())
+print "Will attempt to connect to: " + str(cluster.conf_get('mon initial members'))
+
+cluster.connect()
+print "\nCluster ID: " + cluster.get_fsid()
+
+ioctx = cluster.open_ioctx('data')
+print "----------start read object------------ "
+try:
+print "\n\nContents of object "+sys.argv[1]+"\n------------------------\n"
+
+    try :
+        print ioctx.read(sys.argv[1])        
+    except :
+        print "no such object"
+            ioctx.close()
+    except:
+print "no such object"
+print "---------end read object-------------------"
+ioctx.close()
+</code></pre>
+
+<hr />
+
+<h3>写数据测试</h3>
+
+<pre><code>import sys,rados
+
+
+cluster = rados.Rados(conffile='/etc/ceph/ceph.conf')
+print "\nlibrados version: " + str(cluster.version())
+print "Will attempt to connect to: " + str(cluster.conf_get('mon initial members'))
+
+cluster.connect()
+print "\nCluster ID: " + cluster.get_fsid()
+
+ioctx = cluster.open_ioctx('data')
+
+
+
+try:
+    objname = sys.argv[1]
+    objcontent =""
+    for i in range(2, len(sys.argv)):
+    objcontent += sys.argv[i]
+    objcontent +=" "
+    print "------------start write objcet to ceph-----------"
+    ioctx.write_full(objname, objcontent)
+    print "\n\nContents of object "+ objname +"\n------------------------\n"
+    print ioctx.read(objname)
+
+    #print "\nRemoving object " + objname
+    #ioctx.remove_object(objname)
+finally:
+    #file_object.close( )
+    ioctx.close()
+    print "------------end write object to ceph------------ "
+</code></pre>
+
+<hr />
+
+<h3>写入图片测试</h3>
+
+<pre><code>import rados, sys
+
+cluster = rados.Rados(conffile='/etc/ceph/ceph.conf')
+print "\nlibrados version: " + str(cluster.version())
+print "Will attempt to connect to: " + str(cluster.conf_get('mon initial members'))
+
+cluster.connect()
+print "\nCluster ID: " + cluster.get_fsid()
+
+ioctx = cluster.open_ioctx('data')
+
+
+
+##file_object = open('/opt/ning/text.txt')
+
+file_object = open('/opt/ning/test_photo.jpg')
+try:
+    all_the_text = file_object.read( )
+    ioctx.write_full("hw", all_the_text)
+    print "\n\nContents of object 'hw'\n------------------------\n"
+    print ioctx.read("hw")
+
+    print "\nRemoving object 'hw'"
+    ioctx.remove_object("hw")
+finally:
+     file_object.close( )
+</code></pre>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+Mar 25th, 2016</div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		<a class="addthis_button_tweet"></a>
+		
+		
+		
+	</div>
+	
+</div>
+
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Guangning Sun
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+
+
+
+
+</body>
+</html>
