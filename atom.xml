@@ -4,7 +4,7 @@
   <title><![CDATA[Adolph孙广宁的博客]]></title>
   <link href="http://guangningsun.github.io/atom.xml" rel="self"/>
   <link href="http://guangningsun.github.io/"/>
-  <updated>2016-03-10T15:38:38+08:00</updated>
+  <updated>2016-03-25T14:50:39+08:00</updated>
   <id>http://guangningsun.github.io/</id>
   <author>
     <name><![CDATA[Guangning Sun]]></name>
@@ -12,6 +12,107 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[无网络环境下部署ceph radosgw]]></title>
+    <link href="http://guangningsun.github.io/blog/2016/03/25/wu-wang-luo-huan-jing-xia-bu-shu-ceph-radosgw/"/>
+    <updated>2016-03-25T14:49:49+08:00</updated>
+    <id>http://guangningsun.github.io/blog/2016/03/25/wu-wang-luo-huan-jing-xia-bu-shu-ceph-radosgw</id>
+    <content type="html"><![CDATA[<h1>RGW安装</h1>
+
+<pre><code>    RGW目前支持直接使用CivetWeb作为WebServer，实现HTTP请求的接受和回复，而不需要配置复杂的FCGI和WebServer了。
+</code></pre>
+
+<h3>创建存储池</h3>
+
+<pre><code>1、通过ceph -s命令确认你的Ceph集群已经正常运行，并且集群状态是OK。运行以下命令创建rgw所需的存储池：
+
+    ceph osd pool create .rgw 64 64 
+    ceph osd pool create .rgw.root 64 64 
+    ceph osd pool create .rgw.control 64 64 
+    ceph osd pool create .rgw.gc 64 64 
+    ceph osd pool create .rgw.buckets 64 64 
+    ceph osd pool create .rgw.buckets.index 64 64 
+    ceph osd pool create .log 64 64 
+    ceph osd pool create .intent-log 64 64 
+    ceph osd pool create .usage 64 64 
+    ceph osd pool create .users 64 64 
+    ceph osd pool create .users.email 64 64 
+    ceph osd pool create .users.swift 64 64 
+    ceph osd pool create .users.uid 64 64 
+
+2、配置
+使用CivetWeb作为RGW的前端非常简单，只需要在ceph.conf的末尾中加入以下配置项即可：
+
+[client.radosgw.gateway] 
+host = {your-host-name} 
+log file = /var/log/radosgw/client.radosgw.log 
+
+这三行定义了一个radosgw实例，名称就叫gateway，
+运行的主机是{your-hostname}，需要将其改成实际的主机名。
+“log file”配置项代表了日志路径，
+需要注意的是需要保证该日志文件的父路径“ /var/log/radosgw/”必须存在，
+radosgw不会自动创建，你可以使用
+
+mkdir -p /var/log/radosgw/ 
+创建该路径。
+
+3、启动
+
+启动命令：
+
+radosgw -c /etc/ceph/ceph.conf -n client.radosgw.gateway 
+
+-c参数表示使用的配置文件路径，-n表示要启动的radosgw实例名称，要与配置文件对应。
+
+4、使用
+
+CivetWeb启动的radosgw默认将监听7480端口。你可以直接通过访问http://your-host-ip:7480/来访问该RGW对象存储。
+你可以通过radosgw-admin命令以管理员的方式访问所启动的RGW，执行例如创建用户等操作。
+你也可以通过s3cmd命令行工具以用户的方式访问RGW，或者通过s3broswer图形界面访问RGW，执行上传/下载文件等操作。
+</code></pre>
+
+<h1>无网络环境手动安装步骤</h1>
+
+<p>ceph-deploy install &ndash;rgw ceph-mon 安装rgw</p>
+
+<p>（若无法执行可手动执行以下命令）</p>
+
+<p>所需命令为</p>
+
+<pre><code>yum clean all
+
+yum -y install epel-release
+
+yum -y install yum-priorities
+
+rpm --import https://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/release.asc
+
+因为没有外网环境所以可以将 release.asc文件部署在内网的httpd节点中，
+后将import地址更换成release.asc 在httpd中的地址
+
+* relsea.asc 文件在本文件对应附件中
+
+rpm -Uvh --replacepkgs http://ceph.com/rpm-hammer/el7/noarch/ceph-   release-1-0.el7.noarch.rpm
+
+同样relsease.noarch.rpm文件在附件中，处理办法同上
+
+yum -y install ceph ceph-radosgw
+</code></pre>
+
+<h5>安装rgw客户端所需python 支持</h5>
+
+<pre><code>1、下载 git clone  git://github.com/boto/boto.git
+
+2、将下载包 导入到无网络环境的 ceph集群 rgw节点中执行下述命令
+
+3、cd boto
+pyhton setup.py
+
+boto文件在本文的附件中可以使用
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ceph命令解析及使用]]></title>
@@ -351,7 +452,7 @@
 <h3>向被授权的主机上拷贝</h3>
 
 <ul>
-<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#x6d;&#97;&#x69;&#108;&#116;&#111;&#58;&#114;&#111;&#x6f;&#x74;&#64;&#x31;&#x39;&#x32;&#x2e;&#x31;&#54;&#x38;&#x2e;&#50;&#56;&#x2e;&#x31;&#x33;&#48;">&#114;&#111;&#111;&#x74;&#x40;&#x31;&#x39;&#50;&#46;&#x31;&#54;&#56;&#x2e;&#x32;&#x38;&#46;&#x31;&#51;&#x30;</a></li>
+<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#109;&#97;&#105;&#x6c;&#116;&#x6f;&#58;&#x72;&#x6f;&#111;&#x74;&#64;&#x31;&#57;&#50;&#46;&#49;&#x36;&#56;&#46;&#50;&#56;&#46;&#x31;&#x33;&#x30;">&#114;&#x6f;&#x6f;&#116;&#x40;&#x31;&#57;&#x32;&#46;&#49;&#54;&#x38;&#x2e;&#x32;&#x38;&#46;&#49;&#51;&#48;</a></li>
 </ul>
 
 
