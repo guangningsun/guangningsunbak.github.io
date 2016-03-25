@@ -4,7 +4,7 @@
   <title><![CDATA[Adolph孙广宁的博客]]></title>
   <link href="http://guangningsun.github.io/atom.xml" rel="self"/>
   <link href="http://guangningsun.github.io/"/>
-  <updated>2016-03-25T14:53:53+08:00</updated>
+  <updated>2016-03-25T15:07:32+08:00</updated>
   <id>http://guangningsun.github.io/</id>
   <author>
     <name><![CDATA[Guangning Sun]]></name>
@@ -12,6 +12,184 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ceph-deploy_自动部署ceph集群及radosgw步骤.md]]></title>
+    <link href="http://guangningsun.github.io/blog/2016/03/25/ceph-deploy-zi-dong-bu-shu-cephji-qun-ji-radosgwbu-zou-dot-md/"/>
+    <updated>2016-03-25T15:06:59+08:00</updated>
+    <id>http://guangningsun.github.io/blog/2016/03/25/ceph-deploy-zi-dong-bu-shu-cephji-qun-ji-radosgwbu-zou-dot-md</id>
+    <content type="html"><![CDATA[<h1>ceph-deploy 自动部署ceph集群步骤</h1>
+
+<pre><code>1、新建 admin mon osd0 osd1 节点
+
+2、admin节点执行以下语句
+
+    sudo yum install -y 
+    yum-utils &amp;&amp; sudo yum-config-manager 
+    --add-repo https://dl.fedoraproject.org/pub/epel/7/x86_64/ &amp;&amp; sudo 
+    yum install --nogpgcheck -y epel-release &amp;&amp; sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7 &amp;&amp; sudo rm /etc/yum.repos.d/dl.fedoraproject.org*
+
+3、yum install wget 下载工具
+
+4、yum update &amp;&amp; sudo yum install ceph-deploy 更新yum 下载自动部署工具
+
+5、yum install ntp ntpdate ntp-doc时间同步工具
+
+6、yum install openssh-server 安装ssh
+
+7、sudo setenforce 0 关闭方防火墙
+
+8、yum install yum-plugin-priorities
+
+9、ceph-deploy purgedata {ceph-node} [{ceph-node}]
+
+10、ceph-deploy purge mon01 ceph01 ceph02
+
+11、ceph-deploy new ceph-admin 在管理机上建立集群
+
+12、ceph-deploy install mon01 ceph01 ceph02 在各节点上安装ceph
+
+13、需要更改hosts配置文件并发送至各个节点 并重启节点
+
+14、ceph-deploy mon create-initial 初始化monitor并且聚集各个节点conf文件
+</code></pre>
+
+<h4>出现错误及解决办法</h4>
+
+<hr />
+
+<pre><code>1、ceph-deploy执行mon初始化时 出现如下错误
+
+[mon01][WARNIN] /etc/init.d/ceph: line 15: /lib/lsb/init-   functions: No such file or directory
+[mon01][ERROR ] RuntimeError: command returned non-zero exit status: 1
+
+解决办法:
+
+在 mon节点手动执行yum install redhat-lsb
+
+ceph-deploy osd prepare node2:/var/local/osd0 node3:/var/local/osd1 做安装 osd的准备
+
+ceph-deploy osd activate node2:/var/local/osd0 node3:/var/local/osd1 激活osd
+
+ceph-deploy激活osd时可能遇到
+
+仍然在相应节点执行 
+
+yum install redhat-lsb
+
+ceph-deploy admin ceph-admin mon01 ceph01 ceph02 
+
+将配置文件和keyring分发到指定节点 这样mon才可以有权限获取各个节点的心跳信息
+</code></pre>
+
+<hr />
+
+<h3>ceph-deploy 安装radosgw</h3>
+
+<pre><code>1、ceph-deploy rgw create mon01 在指定节点上创建gateway服务
+
+2、安装后在7480 端口可访问成功数据
+
+3、查看 pool 和object的对应关系
+
+yum install  httpd 安装httpd apache
+
+4、vi /etc/httpd/conf.d/rgw.conf  配置 rgw.conf
+
+&lt;VirtualHost *:80&gt;
+ServerName 192.168.28.134
+DocumentRoot /var/www/html
+
+ErrorLog /var/log/httpd/rgw_error.log
+CustomLog /var/log/httpd/rgw_access.log combined
+
+LogLevel debug
+
+RewriteEngine On
+
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
+
+SetEnv proxy-nokeepalive 1
+
+ProxyPass / unix:///var/run/ceph/ceph.radosgw.gateway.fastcgi.sock|fcgi://192.168.28.134:9000/
+
+&lt;/VirtualHost&gt;
+
+5、sudo radosgw-admin user create --uid="testuser" --display-name="First User" 在gw节点上创建 用户
+
+创建返回数据为
+
+{
+"user_id": "testuser1",
+"display_name": "First1 User",
+"email": "",
+"suspended": 0,
+ "max_buckets": 1000,
+ "auid": 0,
+ "subusers": [],
+ "keys": [
+   {
+       "user": "testuser1",
+       "access_key": "411L1VE75YEM3E214LO2",
+       "secret_key": "dhHD5QXRmXrQuhc8rOihCl74Z4CWCCYbR9V24qKH"
+   }
+ ],
+ "swift_keys": [],
+ "caps": [],
+ "op_mask": "read, write, delete",
+ "default_placement": "",
+ "placement_tags": [],
+  "bucket_quota": {
+      "enabled": false,
+      "max_size_kb": -1,
+      "max_objects": -1
+},
+"user_quota": {
+    "enabled": false,
+    "max_size_kb": -1,
+    "max_objects": -1
+},
+"temp_url_keys": []
+}
+
+6、yum install python-boto 安装 boto编写调用s3插件
+
+7、配置rgw
+
+[global]
+fsid = b2d39459-c51d-4503-b2bc-e2517aa90c86
+mon_initial_members = mon01
+mon_host = 192.168.28.132
+auth_cluster_required = none
+auth_service_required = none
+auth_client_required = none
+filestore_xattr_use_omap = true
+osd_pool_default_size = 2
+debug ms = 1
+debug rgw = 20
+[client.radosgw.gateway]
+host = mon01
+keyring = /etc/ceph/ceph.client.radosgw.keyring
+rgw socket path = /var/run/ceph/ceph.radosgw.gateway.fastcgi.sock
+log file = /var/log/radosgw/client.radosgw.gateway.log
+rgw print continue = false
+
+8、ceph-deploy --overwrite-conf config pull ceph-admin 拉去conf
+
+9、ceph-deploy --overwrite-conf config push mon01 ceph01 ceph02 推送conf
+
+10、scp /etc/ceph/ceph.client.admin.keyring  root@192.168.28.132:/etc/ceph拷贝keyring到rgw节点
+
+11、mkdir -p /var/lib/ceph/radosgw/ceph-radosgw.gateway 在 rgw节点上创建数据目录
+
+12、chown apache:apache /var/run/ceph 在rgw节点上更改ceph所属类别
+
+13、chown apache:apache /var/log/radosgw/client.radosgw.gateway.log 更改rgw日志所属
+
+14、/etc/init.d/ceph-radosgw start 启动rgw
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[无网络环境下部署ceph radosgw]]></title>
@@ -452,7 +630,7 @@ boto文件在本文的附件中可以使用
 <h3>向被授权的主机上拷贝</h3>
 
 <ul>
-<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#109;&#97;&#x69;&#108;&#116;&#x6f;&#x3a;&#x72;&#x6f;&#x6f;&#x74;&#64;&#x31;&#x39;&#x32;&#x2e;&#x31;&#x36;&#56;&#46;&#x32;&#56;&#46;&#x31;&#51;&#x30;">&#114;&#111;&#111;&#x74;&#64;&#49;&#x39;&#x32;&#x2e;&#x31;&#x36;&#56;&#x2e;&#50;&#x38;&#46;&#49;&#x33;&#48;</a></li>
+<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#109;&#x61;&#105;&#108;&#x74;&#x6f;&#x3a;&#114;&#x6f;&#111;&#x74;&#x40;&#x31;&#x39;&#50;&#x2e;&#x31;&#x36;&#x38;&#46;&#50;&#56;&#46;&#x31;&#51;&#48;">&#x72;&#111;&#111;&#116;&#64;&#x31;&#x39;&#x32;&#x2e;&#x31;&#54;&#56;&#x2e;&#x32;&#56;&#46;&#49;&#x33;&#48;</a></li>
 </ul>
 
 
