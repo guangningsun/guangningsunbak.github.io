@@ -7,8 +7,9 @@
 	<meta name="author" content="Guangning Sun">
 
 	
-	<meta name="description" content="ceph librados api python调用测试 删除接口 import sys,rados cluster = rados.Rados(conffile='/etc/ceph/ceph.conf')
-print "\nlibrados version: " + str(cluster. &hellip;">
+	<meta name="description" content="ceph s3接口情况测试脚本 用户access_key 和secret_key需要用命令生成，方法可参考如何搭建rgw相关内容 测试逻辑
+1、同一用户创建同bucket，测试原bucket里的内容是否会被覆盖掉（bucket维度）
+2、同一用户创建不同bucket， &hellip;">
 	
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -75,6 +76,226 @@ print "\nlibrados version: " + str(cluster. &hellip;">
 		
 	
 	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/03/29/ceph-s3jie-kou-shi-yong-ji-jie-guo-fen-xi/">
+		
+			Ceph S3接口使用及结果分析</a>
+	</h2>
+	<div class="entry-content">
+		<h1>ceph s3接口情况测试脚本</h1>
+
+<p>用户access_key 和secret_key需要用命令生成，方法可参考如何搭建rgw相关内容</p>
+
+<pre><code>测试逻辑
+1、同一用户创建同bucket，测试原bucket里的内容是否会被覆盖掉（bucket维度）
+2、同一用户创建不同bucket，但是创建相同object分别存于不同bucket，测试是否允许,在同一个bucket中创建相同名称object则数据被覆盖（object维度）
+3、不同用户通过s3接口创建相同bucket，测试是否被允许（不被允许 bucket维度）
+4、不同用户创建相同名称的object存于不同bucket和相同bucket，测试是否被允许（object维度）
+
+
+
+
+# coding=utf-8
+import boto
+import boto.s3.connection
+
+# author :ning
+# date :2016-03-29
+# desc: test the s3 API and the meanning of bucket
+
+
+'''
+param : access_key &amp; secret_key for the first user
+    access_key2 &amp; secret_key2 for the second user
+    con for the first user
+    con2 for the second user
+descreption:
+    use rgw command to genterate the keys for user to access
+
+'''
+
+access_key = 'OXIHVCEYXVHDDC4G6C9Y'
+secret_key = 'mZOVC6dW9dER1XTKP8tB33Vl3ai16W0DKeffSaxG'
+
+access_key2 = 'QVALWEMRKW2UUWJFMPYE'
+secret_key2 = 'yDUDDl4F1bAv2rxKwqWoPJCxAHmrFO9aIAJ2eAoH'
+
+conn2 = boto.connect_s3(
+    aws_access_key_id = access_key2,
+    aws_secret_access_key = secret_key2,
+    host = '192.168.28.138', port = 7480,
+    is_secure=False, calling_format = boto.s3.connection.OrdinaryCallingFormat(),
+    )
+
+conn = boto.connect_s3(
+    aws_access_key_id = access_key,
+    aws_secret_access_key = secret_key,
+    host = '192.168.28.138', port = 7480,
+    is_secure=False, calling_format = boto.s3.connection.OrdinaryCallingFormat(),
+    )
+
+
+'''
+测试逻辑
+1、同一用户创建同bucket，测试原bucket里的内容是否会被覆盖掉（bucket维度）
+2、同一用户创建不同bucket，但是创建相同object分别存于不同bucket，测试是否允许,在同一个bucket中创建相同名称object则数据被覆盖（object维度）
+3、不同用户通过s3接口创建相同bucket，测试是否被允许（不被允许 bucket维度）
+4、不同用户创建相同名称的object存于不同bucket和相同bucket，测试是否被允许（object维度）
+
+'''
+#测试逻辑1
+
+bucket = conn.create_bucket('first_user_bucket')
+for bucket in conn.get_all_buckets():
+    print "{name}\t{created}".format(
+                name = bucket.name,
+                created = bucket.creation_date,
+    )
+
+
+key = bucket.new_key('hello_oragin.txt')
+key.set_contents_from_string('this is the first Hello World !')
+
+hello_key =bucket.get_key('hello_oragin.txt')
+hello_key.set_canned_acl('public-read')
+
+hello_url = hello_key.generate_url(0,query_auth=False,force_http=True)
+
+print "首次创建bucket 首次创建 object"
+print hello_url
+print "我们可以确认从上述url中可以get下文件"
+
+#key.get_contents_to_filename('/opt/ning/hello_oragin.txt')
+
+#first用户创建相同名称的bucket，但并不创建object，看是否能够得到原有的object
+
+bucket1 = conn.create_bucket('first_user_bucket')
+for bucket in conn.get_all_buckets():
+    print "{name}\t{created}".format(
+                name = bucket.name,
+                created = bucket.creation_date,
+
+    )
+
+print "重新生成url"
+hello_url = hello_key.generate_url(0,query_auth=False,force_http=True)
+print "查看url下是否有文件和内容this is the first Hello World !"
+print " 结论为  仍然可以下载到文件，覆盖bucket并不影响object内容"
+print "------------------------------------------------------"
+print ""
+
+#测试逻辑2
+bucket2 = conn.create_bucket('first_user_bucket2')
+for bucket in conn.get_all_buckets():
+    print "{name}\t{created}".format(
+                name = bucket.name,
+                created = bucket.creation_date,
+    )
+first_user_key2 = bucket2.new_key('hello_oragin.txt')
+first_user_key2.set_contents_from_string('this is the hello world that created  by first user in the second bucket but the same object name')
+hello_key_first_user2 = bucket2.get_key('hello_oragin.txt')
+hello_key_first_user2.set_canned_acl('public-read')
+hello_url2 =hello_key_first_user2.generate_url(0,query_auth=False,force_http=True)
+print "创建了新bucket1 "
+print "创建了新的url"
+print hello_url2
+print "在新bucket2里创建与bucket1相同的object，查看两个url中是否都同时存在数据"
+print "结论为：两个url中均可得到预想的数据，在两个不同bucket中可以存储相同名称的object"
+print "------------------------------------------------------"
+print ""
+
+#测试逻辑3
+
+try:
+    bucket3 = conn2.create_bucket('first_user_bucket')
+except Exception,e:
+    print "用户2无法创建相同名称的bucket"
+    print e
+    print ""
+
+#测试逻辑4
+
+
+print "-------------------------------------------------------"
+print ""
+'''
+this section is for secret url 
+now we don't introduce the detials
+
+'''
+key1 = bucket.new_key('secret_plans.txt')
+key1.set_contents_from_string('secret hello world!')
+
+plans_key = bucket.get_key('secret_plans.txt')
+plans_key.set_canned_acl('private')
+plans_url = plans_key.generate_url(3600,query_auth=True,force_http=True)
+print plans_url
+
+key1.get_contents_to_filename('/opt/ning/secret.txt')
+</code></pre>
+
+<h2>执行上述脚本后可得出结论</h2>
+
+<table>
+<thead>
+<tr>
+<th> 同一用户操作        </th>
+<th style="text-align:center;"> 相同objcet          </th>
+<th style="text-align:right;"> 不同object  </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> 相同bucket      </td>
+<td style="text-align:center;"> object的数据会被覆盖 </td>
+<td style="text-align:right;"> 正常操作 </td>
+</tr>
+<tr>
+<td> 不同bucket      </td>
+<td style="text-align:center;"> 可以存储互相不会影响，可以认证对象存储的key不是该层object的文件名称      </td>
+<td style="text-align:right;">   正常操作 </td>
+</tr>
+<tr>
+<td> 不同用户操作 </td>
+<td style="text-align:center;"> 相同objcet      </td>
+<td style="text-align:right;">    不同 object </td>
+</tr>
+<tr>
+<td> 相同bucket </td>
+<td style="text-align:center;"> 无法创建相同的bucket </td>
+<td style="text-align:right;">无法创建相同的bucket </td>
+</tr>
+<tr>
+<td> 不同bucket </td>
+<td style="text-align:center;">可以创建相同名称的object，且互相不会影响。</td>
+<td style="text-align:right;">正常操作</td>
+</tr>
+</tbody>
+</table>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+Mar 29th, 2016</div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
 
 
     <article class="post">
@@ -916,7 +1137,7 @@ Mar 10th, 2016</div>
 <h3>向被授权的主机上拷贝</h3>
 
 <ul>
-<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#x6d;&#x61;&#x69;&#x6c;&#x74;&#x6f;&#x3a;&#x72;&#111;&#111;&#116;&#64;&#x31;&#57;&#50;&#46;&#49;&#x36;&#56;&#x2e;&#x32;&#x38;&#x2e;&#x31;&#x33;&#x30;">&#x72;&#111;&#x6f;&#116;&#x40;&#49;&#x39;&#x32;&#46;&#49;&#54;&#x38;&#x2e;&#x32;&#x38;&#x2e;&#x31;&#51;&#x30;</a></li>
+<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#x6d;&#x61;&#105;&#x6c;&#x74;&#x6f;&#x3a;&#114;&#x6f;&#x6f;&#116;&#x40;&#x31;&#57;&#50;&#x2e;&#x31;&#54;&#x38;&#x2e;&#50;&#56;&#x2e;&#x31;&#x33;&#48;">&#x72;&#111;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#46;&#x31;&#x36;&#x38;&#46;&#50;&#x38;&#46;&#49;&#51;&#x30;</a></li>
 </ul>
 
 
