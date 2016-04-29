@@ -4,7 +4,7 @@
   <title><![CDATA[Adolph孙广宁的博客]]></title>
   <link href="http://guangningsun.github.io/atom.xml" rel="self"/>
   <link href="http://guangningsun.github.io/"/>
-  <updated>2016-04-29T14:46:51+08:00</updated>
+  <updated>2016-04-29T17:55:53+08:00</updated>
   <id>http://guangningsun.github.io/</id>
   <author>
     <name><![CDATA[Guangning Sun]]></name>
@@ -841,13 +841,118 @@ pattern将匹配整个IP地址，补货圆括号内的IP地址前三位，捕获
 
 <hr />
 
-<h4>第五节 使用内联模板</h4>
-
-<h3>第三章</h3>
+<h3>第三章 创建puppet配置清单</h3>
 
 <hr />
 
-<p>创建第一个puppet 配置</p>
+<h5>配置一个测试节点</h5>
+
+<p>[root@cookbook5 ~]# tree /etc/puppet</p>
+
+<p>/etc/puppet</p>
+
+<p>├── auth.conf</p>
+
+<p>├── manifests</p>
+
+<p>│   ├── development</p>
+
+<p>│   ├── nodes</p>
+
+<p>│   │   └── cookbook6.localdomain.com.pp</p>
+
+<p>│   ├── production</p>
+
+<p>│   ├── site.pp</p>
+
+<p>│   └── testing</p>
+
+<p>├── modules</p>
+
+<p>│   ├── development</p>
+
+<p>│   ├── httpd</p>
+
+<p>│   │   ├── files</p>
+
+<p>│   │   ├── manifests</p>
+
+<p>│   │   │   └── init.pp</p>
+
+<p>│   │   └── templates</p>
+
+<p>│   ├── production</p>
+
+<p>│   ├── test</p>
+
+<p>│   │   ├── files</p>
+
+<p>│   │   ├── manifests</p>
+
+<p>│   │   │   └── init.pp</p>
+
+<p>│   │   └── templates</p>
+
+<p>│   │       └── test.erb</p>
+
+<p>│   └── testing</p>
+
+<p>└── puppet.conf</p>
+
+<blockquote><p>目录结构可以自己定义，但是社区已经形成风格，建议使用社区的目录结构</p></blockquote>
+
+<ol>
+<li>auth.conf 用户权限配置文件</li>
+<li>/etc/puppet/manifests为 节点全局配置文件夹</li>
+<li><p>其中 nodes文件夹下为各个节点的概况描述，如 需要安装哪些模块等</p>
+
+<pre><code> [root@cookbook5 ~]# cat /etc/puppet/manifests/nodes/cookbook6.localdomain.com.pp 
+ node  'cookbook6'  {
+   include test
+   include httpd
+ }
+</code></pre></li>
+<li><p>其中 development production testing 为分环境配置，并且可以在puppet.conf中配置当前所使用的环境</p></li>
+<li><p>site.pp为清单执行入口，标记了所要导入的节点配置文件</p>
+
+<pre><code> [root@cookbook5 ~]# cat /etc/puppet/manifests/site.pp 
+ #import  'nodes/cookbook6.localdomain.com.pp'
+ import "nodes/*.pp"
+</code></pre></li>
+<li><p>module 文件夹下为所添加的模板信息，可在下边配置要添加的模块配置清单</p></li>
+<li><p>以httpd模块为例，files 文件夹下为所要分发的文件资源，template为参数的配置信息
+manifest文件夹下为主要的配置信息，执行时先会执行该文件夹下的pp文件其中init.pp内容为</p>
+
+<pre><code>  [root@cookbook5 ~]# cat /etc/puppet/modules/httpd/manifests/init.pp 
+  class  httpd  {
+    yumrepo  {"repo163":
+      descr     =&gt;  "163 repo",
+      baseurl   =&gt;  "http://mirrors.163.com/centos/6/os/x86_64",
+      gpgcheck  =&gt;  "0",
+      enabled   =&gt;  "1",
+    }
+    package  {"httpd":
+      ensure   =&gt; installed,
+      require  =&gt;  Yumrepo["repo163"];
+    }
+  }
+</code></pre></li>
+<li><p>test模块相同原理</p>
+
+<pre><code> [root@cookbook5 ~]# cat /etc/puppet/modules/test/manifests/init.pp 
+ class  test {  
+   file  {  "/opt/ning/tmp/$hostname":content  =&gt;  'hello world !';  }
+ }       
+</code></pre></li>
+<li><p>test 模块下 $hostname参数在template中进行了描述，文件命名test.erb
+其中格式名称与要执行的类名相同，后缀为erb参数模板。</p>
+
+<pre><code>  [root@cookbook5 ~]# cat /etc/puppet/modules/test/templates/test.erb 
+  hostname &lt;%= fqdn %&gt;
+</code></pre></li>
+<li>在客户机上执行 puppet apply 即可将我们添加的模块 同步到客户机上。</li>
+</ol>
+
 
 <h3>第四章 创建去中心化的puppet架构</h3>
 
@@ -2786,7 +2891,7 @@ boto文件在本文的附件中可以使用
 <h3>向被授权的主机上拷贝</h3>
 
 <ul>
-<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#x6d;&#x61;&#x69;&#108;&#116;&#111;&#58;&#x72;&#111;&#x6f;&#x74;&#64;&#49;&#57;&#50;&#x2e;&#49;&#54;&#x38;&#46;&#50;&#x38;&#x2e;&#x31;&#51;&#48;">&#x72;&#111;&#111;&#x74;&#x40;&#x31;&#57;&#x32;&#x2e;&#49;&#x36;&#56;&#46;&#x32;&#x38;&#x2e;&#x31;&#x33;&#x30;</a></li>
+<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#109;&#x61;&#105;&#108;&#x74;&#x6f;&#x3a;&#114;&#111;&#x6f;&#116;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#x36;&#56;&#x2e;&#50;&#56;&#x2e;&#x31;&#x33;&#x30;">&#x72;&#111;&#111;&#116;&#x40;&#49;&#57;&#x32;&#46;&#x31;&#54;&#56;&#x2e;&#50;&#x38;&#x2e;&#x31;&#51;&#x30;</a></li>
 </ul>
 
 
