@@ -1,0 +1,1207 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>puppet cookbook - Adolph孙广宁的博客</title>
+	<meta name="author" content="Guangning Sun">
+
+	
+	<meta name="description" content="Puppet学习 puppet 代表一种代码语言
+puppet 代表一种对集群基础设施进行管理的平台 第一章 puppet安装总结 第一节 工作原理 第二节 准备工作 关闭防火墙
+NTP同步
+更改hosts
+安装ruby环境
+下载EPEL对应的版本和安装
+配置yum源，或者将puppet &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Adolph孙广宁的博客" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Adolph孙广宁的博客</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.baidu.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:guangningsun.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.baidu.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:guangningsun.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Puppet Cookbook</h2>
+	<div class="entry-content"><h1>Puppet学习</h1>
+
+<hr />
+
+<ul>
+<li>puppet 代表一种代码语言</li>
+<li>puppet 代表一种对集群基础设施进行管理的平台</li>
+</ul>
+
+
+<h3>第一章 puppet安装总结</h3>
+
+<hr />
+
+<h4>第一节 工作原理</h4>
+
+<hr />
+
+<h4>第二节 准备工作</h4>
+
+<ul>
+<li>关闭防火墙</li>
+<li>NTP同步</li>
+<li>更改hosts</li>
+<li>安装ruby环境</li>
+<li>下载EPEL对应的版本和安装</li>
+<li>配置yum源，或者将puppet server和puppet client的rpm包下载</li>
+</ul>
+
+
+<p>以下将讲述详细操作步骤</p>
+
+<h6>2.1 关闭selinux</h6>
+
+<pre><code>setenforce 0
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config  
+</code></pre>
+
+<h6>2.2 NTP同步</h6>
+
+<pre><code>ntpdate 0.rhel.pool.ntp.org
+crontab -e
+0 0 * * * /usr/sbin/ntpdate 0.rhel.pool.ntp.org;/usr/sbin/hwclock -w
+</code></pre>
+
+<h6>2.3 添加hosts</h6>
+
+<p>vi /etc/hosts</p>
+
+<pre><code>    192.168.28.148 cookbook3.localdomain.com cookbook3
+
+    192.168.28.149 cookbook4.localdomain.com cookbook4
+</code></pre>
+
+<h6>2.4 puppet</h6>
+
+<p><a href="http://downloads.puppetlabs.com/puppet/">http://downloads.puppetlabs.com/puppet/</a></p>
+
+<h6>2.5 facter</h6>
+
+<p><a href="http://downloads.puppetlabs.com/facter/">http://downloads.puppetlabs.com/facter/</a></p>
+
+<h6>2.6 ruby</h6>
+
+<p><a href="https://www.ruby-lang.org/zh_cn/downloads/">https://www.ruby-lang.org/zh_cn/downloads/</a></p>
+
+<h6>2.7 配置CentOS YUM源</h6>
+
+<p>cd /etc/yum.repos.d/</p>
+
+<p>cp Centos-Base.repo Centos-Base.repo.bak</p>
+
+<p>vi Centos-Base.repo</p>
+
+<pre><code>    [base]
+    name=CentOS-$releasever-Base
+    baseurl=http://centos.ustc.edu.cn/centos/6/os/x86_64/
+    gpgcheck=1
+    gpgkey=http://mirrors.163.com/centos/RPM-GPG-KEY-CentOS-6
+
+    [updates]
+    name=CentOS-$releasever-Updates
+    baseurl=http://centos.ustc.edu.cn/centos/6/os/x86_64/
+    gpgcheck=1
+    gpgkey=http://mirrors.163.com/centos/RPM-GPG-KEY-CentOS-6
+
+    [extras]
+    name=CentOS-$releasever-Extras
+    baseurl=http://centos.ustc.edu.cn/centos/6/os/x86_64/
+    gpgcheck=1
+    gpgkey=http://mirrors.163.com/centos/RPM-GPG-KEY-CentOS-6
+
+    [centosplus]
+    name=CentOS-$releasever-Plus
+    baseurl=http://centos.ustc.edu.cn/centos/6/os/x86_64/
+    gpgcheck=1
+</code></pre>
+
+<p>yum clean all</p>
+
+<p>yum makecache</p>
+
+<p>yum repolist</p>
+
+<hr />
+
+<h4>第三节 Puppet Server安装</h4>
+
+<ul>
+<li>现已经将puppet server 所需的rpm包全部下载</li>
+<li>如需安装只需在 rpm安装包目录下执行 rpm -Uvh * 命令即可</li>
+<li>安装版本为puppet 3.8</li>
+</ul>
+
+
+<h6>在网络畅通的情况下也可以按照以下步骤执行</h6>
+
+<h6>3.1 Enable the Puppet Labs Package Repository</h6>
+
+<p>rpm -ivh <a href="https://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm">https://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm</a></p>
+
+<h6>3.2 安装yum-plugin-downloadonly插件</h6>
+
+<p>yum install -y yum-plugin-downloadonly</p>
+
+<h6>3.3 安装puppet server</h6>
+
+<p>yum install puppetserver</p>
+
+<p>yum install &ndash;downloadonly &ndash;downloaddir=/tmp/puppetserver puppetserver</p>
+
+<pre><code>    Total download size: 73 M
+    Is this ok [y/N]: y
+    Downloading Packages:
+    (1/22): augeas-libs-1.0.0-10.el6.x86_64.rpm          
+    (2/22): compat-readline5-5.2-17.1.el6.x86_64.rpm     
+    (3/22): facter-2.4.6-1.el6.x86_64.rpm                
+    (4/22): hiera-1.3.4-1.el6.noarch.rpm                 
+    (5/22): java-1.7.0-openjdk-1.7.0.79-2.5.5.4.el6.x86_6
+    (6/22): libjpeg-turbo-1.2.1-3.el6_5.x86_64.rpm       
+    (7/22): libselinux-2.0.94-5.8.el6.i686.rpm           
+    (8/22): libselinux-2.0.94-5.8.el6.x86_64.rpm         
+    (9/22): libselinux-devel-2.0.94-5.8.el6.x86_64.rpm   
+    (10/22): libselinux-python-2.0.94-5.8.el6.x86_64.rpm 
+    (11/22): libselinux-ruby-2.0.94-5.8.el6.x86_64.rpm   
+    (12/22): libselinux-utils-2.0.94-5.8.el6.x86_64.rpm  
+    (13/22): puppet-3.8.6-1.el6.noarch.rpm               
+    (14/22): puppetserver-1.1.3-1.el6.noarch.rpm         
+    (15/22): ruby-1.8.7.374-4.el6_6.x86_64.rpm           
+    (16/22): ruby-augeas-0.4.1-3.el6.x86_64.rpm          
+    (17/22): ruby-irb-1.8.7.374-4.el6_6.x86_64.rpm       
+    (18/22): ruby-libs-1.8.7.374-4.el6_6.x86_64.rpm      
+    (19/22): ruby-rdoc-1.8.7.374-4.el6_6.x86_64.rpm      
+    (20/22): ruby-shadow-2.2.0-2.el6.x86_64.rpm          
+    (21/22): rubygem-json-1.5.5-3.el6.x86_64.rpm         
+    (22/22): rubygems-1.3.7-5.el6.noarch.rpm             
+
+    cookbook3@/tmp/puppetserver#rpm -Uvh *
+    warning: augeas-libs-1.0.0-10.el6.x86_64.rpm: Header V3 RSA/SHA1 Signature, key ID c105b9de: NOKEY
+    warning: facter-2.4.6-1.el6.x86_64.rpm: Header V4 RSA/SHA1 Signature, key ID 4bd6ec30: NOKEY
+
+Preparing...                 ########################################### [100%]
+    1:libselinux             ###########################################
+    2:augeas-libs            ########################################### [  9%]
+    3:libselinux-ruby        ########################################### [ 14%]
+    4:libselinux-utils       ########################################### [ 18%]
+    5:libjpeg-turbo          ########################################### [ 23%]
+    6:java-1.7.0-openjdk     ########################################### [ 27%]
+    7:compat-readline5       ########################################### [ 32%]
+    8:ruby-libs              ########################################### [ 36%]
+    9:ruby                   ########################################### [ 41%]
+   10:facter                 ########################################### [ 45%]
+   11:ruby-irb               ########################################### [ 50%]
+   12:ruby-rdoc              ########################################### [ 55%]
+   13:rubygems               ########################################### [ 59%]
+   14:rubygem-json           ########################################### [ 64%]
+   15:hiera                  ########################################### [ 68%]
+   16:ruby-shadow            ########################################### [ 73%]
+   17:ruby-augeas            ########################################### [ 77%]
+   18:puppet                 ########################################### [ 82%]
+   19:puppetserver           ########################################### [ 86%]
+   20:libselinux-devel       ########################################### [ 91%]
+   21:libselinux-python      ########################################### [ 95%]
+   22:libselinux             ########################################### [100%]
+</code></pre>
+
+<h6>3.4 验证puppetserver</h6>
+
+<p>cookbook3@/tmp/puppetserver#yum install puppetserver</p>
+
+<pre><code>Loaded plugins: downloadonly, product-id, refresh-packagekit, security, subscription-manager
+Updating certificate-based repositories.
+Unable to read consumer identity
+Setting up Install Process
+Package puppetserver-1.1.3-1.el6.noarch already installed and latest version
+Nothing to do
+</code></pre>
+
+<h6>3.5 增加puppet master配置信息</h6>
+
+<p>vi /etc/puppet/puppet.conf</p>
+
+<pre><code> [main]
+     # master的主机名
+     server = cookbook3.localdomain.com
+     # master的主机名
+     certname = cookbook3.localdomain.com
+     #禁用插件同步
+     pluginsync = false
+     # The Puppet log directory.
+     # The default value is '$vardir/log'.
+     logdir = /var/log/puppet
+
+     # Where Puppet PID files are kept.
+     # The default value is '$vardir/run'.
+     rundir = /var/run/puppet
+
+     # Where SSL certificates are kept.
+     # The default value is '$confdir/ssl'.
+     ssldir = $vardir/ssl
+
+ [agent]
+     # The file in which puppetd stores a list of the classes
+     # associated with the retrieved configuratiion.  Can be loaded in
+     # the separate ``puppet`` executable using the ``--loadclasses``
+     # option.
+     # The default value is '$confdir/classes.txt'.
+     classfile = $vardir/classes.txt
+
+     # Where puppetd caches the local configuration.  An
+     # extension indicating the cache format is added automatically.
+     # The default value is '$confdir/localconfig'.
+     localconfig = $vardir/localconfig
+</code></pre>
+
+<h6>3.6 启动puppet</h6>
+
+<p>puppet master</p>
+
+<pre><code>    ps -ef |grep master
+    puppet    3077     1  0 10:09 ?        00:00:00 /usr/bin/ruby /usr/bin/puppet master
+    root      3081  3015  0 10:09 pts/0    00:00:00 grep master
+</code></pre>
+
+<hr />
+
+<h4>第四节 puppet client安装</h4>
+
+<ul>
+<li>现已经将puppet server 所需的rpm包全部下载</li>
+<li>如需安装只需在 rpm安装包目录下执行 rpm -Uvh * 命令即可</li>
+<li>安装版本为puppet 3.8</li>
+</ul>
+
+
+<h6>4.1 Enable the Puppet Labs Package Repository</h6>
+
+<pre><code>rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
+</code></pre>
+
+<h6>4.2 安装yum-plugin-downloadonly插件</h6>
+
+<pre><code>yum install -y yum-plugin-downloadonly
+</code></pre>
+
+<h6>4.3 yum install puppet</h6>
+
+<pre><code>yum install --downloadonly --downloaddir=/tmp/puppet puppet
+
+Downloading Packages:
+(1/19): augeas-libs-1.0.0-10.el6.x86_64.rpm          
+(2/19): compat-readline5-5.2-17.1.el6.x86_64.rpm     
+(3/19): facter-2.4.6-1.el6.x86_64.rpm                
+(4/19): hiera-1.3.4-1.el6.noarch.rpm                 
+(5/19): libselinux-2.0.94-5.8.el6.i686.rpm           
+(6/19): libselinux-2.0.94-5.8.el6.x86_64.rpm         
+(7/19): libselinux-devel-2.0.94-5.8.el6.x86_64.rpm   
+(8/19): libselinux-python-2.0.94-5.8.el6.x86_64.rpm  
+(9/19): libselinux-ruby-2.0.94-5.8.el6.x86_64.rpm    
+(10/19): libselinux-utils-2.0.94-5.8.el6.x86_64.rpm  
+(11/19): puppet-3.8.6-1.el6.noarch.rpm               
+(12/19): ruby-1.8.7.374-4.el6_6.x86_64.rpm           
+(13/19): ruby-augeas-0.4.1-3.el6.x86_64.rpm          
+(14/19): ruby-irb-1.8.7.374-4.el6_6.x86_64.rpm       
+(15/19): ruby-libs-1.8.7.374-4.el6_6.x86_64.rpm      
+(16/19): ruby-rdoc-1.8.7.374-4.el6_6.x86_64.rpm      
+(17/19): ruby-shadow-2.2.0-2.el6.x86_64.rpm          
+(18/19): rubygem-json-1.5.5-3.el6.x86_64.rpm         
+(19/19): rubygems-1.3.7-5.el6.noarch.rpm             
+</code></pre>
+
+<h6>4.4 离线安装</h6>
+
+<p>cookbook4@/tmp/puppet#rpm -Uvh *</p>
+
+<pre><code>warning: facter-2.4.6-1.el6.x86_64.rpm: Header V4 RSA/SHA1 Signature, key ID 4bd6ec30: NOKEY
+Preparing...                ########################################### [100%]
+   1:libselinux             ########################################### [  5%]
+   2:augeas-libs            ########################################### [ 11%]
+   3:libselinux-ruby        ########################################### [ 16%]
+   4:libselinux-utils       ########################################### [ 21%]
+   5:compat-readline5       ########################################### [ 26%]
+   6:ruby-libs              ########################################### [ 32%]
+   7:ruby                   ########################################### [ 37%]
+   8:facter                 ########################################### [ 42%]
+   9:ruby-irb               ########################################### [ 47%]
+  10:ruby-rdoc              ########################################### [ 53%]
+  11:rubygems               ########################################### [ 58%]
+  12:rubygem-json           ########################################### [ 63%]
+  13:hiera                  ########################################### [ 68%]
+  14:ruby-shadow            ########################################### [ 74%]
+  15:ruby-augeas            ########################################### [ 79%]
+  16:puppet                 ########################################### [ 84%]
+  17:libselinux-devel       ########################################### [ 89%]
+  18:libselinux-python      ########################################### [ 95%]
+  19:libselinux             ########################################### [100%]
+</code></pre>
+
+<h6>4.5 验证puppet</h6>
+
+<pre><code>cookbook4@/tmp/puppet#yum install puppet
+
+Loaded plugins: fastestmirror, product-id, refresh-packagekit, security,    subscription-manager
+Updating certificate-based repositories.
+Unable to read consumer identity
+Setting up Install Process
+Loading mirror speeds from cached hostfile
+Package puppet-3.8.6-1.el6.noarch already installed and latest version
+Nothing to do
+</code></pre>
+
+<h6>4.6 增加puppet client配置信息</h6>
+
+<p>vi /etc/puppet/puppet.conf</p>
+
+<pre><code>[main]
+    # master的主机名
+    server = cookbook3.localdomain.com
+    # 禁用插件同步
+    pluginsync = false
+    # The Puppet log directory.
+    # The default value is '$vardir/log'.
+    logdir = /var/log/puppet
+
+    # Where Puppet PID files are kept.
+    # The default value is '$vardir/run'.
+    rundir = /var/run/puppet
+
+    # Where SSL certificates are kept.
+    # The default value is '$confdir/ssl'.
+    ssldir = $vardir/ssl
+
+[agent]
+    # The file in which puppetd stores a list of the classes
+    # associated with the retrieved configuratiion.  Can be loaded in
+    # the separate ``puppet`` executable using the ``--loadclasses``
+    # option.
+    # The default value is '$confdir/classes.txt'.
+    classfile = $vardir/classes.txt
+
+    # Where puppetd caches the local configuration.  An
+    # extension indicating the cache format is added automatically.
+    # The default value is '$confdir/localconfig'.
+    localconfig = $vardir/localconfig
+</code></pre>
+
+<hr />
+
+<h4>第五节 puppet client证书认证</h4>
+
+<h6>5.1 client agent连接server</h6>
+
+<pre><code>puppet agent --server=cookbook3.localdomain.com 或者
+
+puppet agent -t --server=cookbook3.localdomain.com
+</code></pre>
+
+<h6>5.2 在master上查看申请证书请求</h6>
+
+<pre><code>puppet cert --list
+
+"cookbook4.localdomain.com" (SHA256) BC:1B:42:88:B0:A4:F0:F2:81:56:5D:0E:7A:49:90:83:79:F2:41:A5:E3:12:FC:E2:F2:DB:DE:30:8E:DB:0D:D0
+</code></pre>
+
+<h6>5.3 在master上签发证书</h6>
+
+<pre><code>puppet cert sign --all
+
+puppet cert --sign cookbook4.localdomain.com
+
+Notice: Signed certificate request for client
+Notice: Removing file Puppet::SSL::CertificateRequest client at '/var/lib/puppet/ssl/ca/requests/client.pem'
+</code></pre>
+
+<h6>5.4 查看证书，"+&ldquo;表示已经签名成功</h6>
+
+<pre><code>puppet cert -all
+
++ "cookbook4.localdomain.com" (SHA256) BC:1B:42:88:B0:A4:F0:F2:81:56:5D:0E:7A:49:90:83:79:F2:41:A5:E3:12:FC:E2:F2:DB:DE:30:8E:DB:0D:D0
++ "cookbook3.localdomain.com" (SHA256) 04:45:21:0B:B5:5E:41:AE:9C:F4:B4:6B:EC:2F:AA:D2:BE:46:33:3E:B1:0E:85:2E:3C:B7:6B:98:95:A8:CE:4D
+</code></pre>
+
+<hr />
+
+<h4>第六节 puppet同步测试</h4>
+
+<h6>6.1 在master上创建一个site.pp文件</h6>
+
+<pre><code>vi /etc/puppet/manifests/site.pp
+</code></pre>
+
+<ul>
+<li>以下内容格式采用puppet 编码格式，在下一章节可以了解到puppet语言的风格及写法</li>
+</ul>
+
+
+<p>node default { file { &ldquo;/tmp/test.txt&rdquo;: content => &ldquo;Hello, First puppet test!&rdquo;} }</p>
+
+<h6>6.2 在client机进行验证，如果/tmp/test.txt文件生成并有内容，则说明功能正常。</h6>
+
+<p>puppet agent &ndash;test</p>
+
+<pre><code>Info: Caching catalog for client
+Info: Applying configuration version '1458888162'
+Notice: /Stage[main]/Main/Node[default]/File[/tmp/test.txt]/ensure: defined content as '{md5}390b4c389233b9ae38a84ff8c731a8a1'
+Info: Creating state file /var/lib/puppet/state/state.yaml
+Notice: Finished catalog run in 0.03 seconds
+</code></pre>
+
+<hr />
+
+<h3>第二章 puppet 语言和风格</h3>
+
+<hr />
+
+<pre><code>    配置清单：puppet用于配置服务器的主程序代码被称为配置清单
+</code></pre>
+
+<h4>第一节 社区推荐的puppet风格</h4>
+
+<hr />
+
+<h6>1.1 缩进</h6>
+
+<pre><code>    配置清单中使用两个空格进行缩进（不适用Tab）参考一下代码
+    node  ‘monitoring’  inherits  ‘server’  {
+      include  icinga::server
+      include  repo::apt
+    }
+</code></pre>
+
+<h6>1.2 引号</h6>
+
+<pre><code>    --资源的名字始终使用引号注明，如下：
+    file  {  '/tmp/test.txt':
+    而不是
+    file  {  /tmp/test.txt:
+    所有字符串使用单引号，除非
+        * 字符串中有变量（如${name}）。
+        * 字符串中包含了转义字符（如 \n）。
+    在上述情况下应该使用双引号，否则puppet不会处理。
+    --在puppet中始终要讲非保留字的参数值用单引号引起来，如
+    name  =&gt;  'ning',
+    mode  =&gt;  '0700',
+    owner  =&gt;  'root',
+    但是，如下保留字的参数值则不需要引号
+    ensure  =&gt;  installed,
+    enable  =&gt;  ture,
+    ensure  =&gt;  running,
+</code></pre>
+
+<h6>1.3 变量</h6>
+
+<pre><code>    --当字符串引入变量时，要确保他们被大括{}号括起来，如
+    source  =&gt;  "puppet:///modules/weget/${brand}.conf",
+    否则puppet语法解析器无法解析变量，
+
+    --///表示该路径在根目录下 且已经忽略了file文件夹 
+</code></pre>
+
+<h6>1.4 参数</h6>
+
+<pre><code>    --在参数行末尾要加逗号，最后一行也要添加,方便以后用户添加和调整参数
+    service  {'memcached':
+      ensure  =&gt;  running,
+      enable  =&gt;  true,
+    }
+    --当声明仅仅带有一个参数的资源时，要把全部声明写在一行，并且不要在末尾添加逗号
+    package  {  'puppet':ensure  =&gt;  installed}
+    --当声明多个参数时，需要让每一个参数各占据一行。
+    package  {  ‘rake’:
+      ensure    =&gt;  installed,
+      provider  =&gt;  gem,
+      require   =&gt;  Package['rubygem'],   
+    }
+    --所有参数的箭头都要与最长参数名所在行箭头对齐，如上图所示，方便剪切。
+</code></pre>
+
+<h6>1.5符号链接</h6>
+
+<pre><code>    当声明的file资源是符号链接这种类型时，要设置ensure =&gt; link 及 target 属性
+    file  {  '/etc/php5/cli/php.ini':
+      ensure  =&gt;  link,
+      target  =&gt;  '/etc/php.ini',       
+    }
+</code></pre>
+
+<hr />
+
+<h4>第二节 使用puppet-lint检查配置清单（代码）</h4>
+
+<p>代码主要风格如下</p>
+
+<ul>
+<li>必须使用两个空格，不能使用软跳格TAB</li>
+<li>不得使用文字制表符</li>
+<li>不得包含尾随空格</li>
+<li>每行代码最好不得超过80个字符（检查会出错但是不影响使用）</li>
+<li><p>代码块中的参数箭头=>需要对齐(主要是风格统一，实际没有影响)</p>
+
+<p>  使用puppet-link来检查代码风格正确性
+  1、安装 gem install puppet-link
+  2、直接 使用命令 puppet-link site.pp检查site.pp文件的风格正确性</p></li>
+</ul>
+
+
+<p>正确时不会有输出</p>
+
+<p>错误时会有提醒</p>
+
+<p>如果不希望检查一行代码是否超出了80字符</p>
+
+<p>可以使用命令
+puppet-lint  &ndash;no-80chars-check</p>
+
+<p>更多风格检查可以查看
+<a href="http://puppet-link.com">http://puppet-link.com</a></p>
+
+<hr />
+
+<h4>第三节 使用模块</h4>
+
+<blockquote><p>能够使puppet配置清单清晰并且易于维护的最重要方式就是将他们组织成模块。
+下面创建一个模块来管理memcached</p></blockquote>
+
+<ol>
+<li><p>在puppet代码仓库中创建以下目录</p>
+
+<pre><code> mkdir modules/memcached
+ mkdir modules/memcached/manifests
+ mkdir modueles/memcached/files
+</code></pre></li>
+<li><p>根据如下内容创建modules/memcached/manifests/init.pp 文件：</p>
+
+<pre><code> class memcached  {
+   package  {  'memecached':
+     ensure  =&gt;  installed,
+   }
+
+   file  {  '/etc/memcached.conf':
+     source   =&gt;  'puppet:///modules/memcached/memcached.conf',
+     owner    =&gt;  'root',
+     group    =&gt;  'root',
+     mode     =&gt;  '0644'
+     require  =&gt;  Package['memcached'],
+   }
+
+   service  {  'memcached'
+     ensure   =&gt;  running,
+     enable   =&gt;  true,
+     require  =&gt;  [Package['memcached']],
+                     File['/etc/memcached.conf'],
+   }
+ }
+</code></pre></li>
+<li><p>参考如下内容创建 modules/memcached/files/memcached.conf文件：</p>
+
+<pre><code> -m 64
+ -p 11211
+ -u nobody
+ -l 127.0.0.1
+</code></pre></li>
+<li><p>把下面内容加入nodes.pp</p>
+
+<pre><code> node 'cookbook3'  {
+   include memcached
+ }
+</code></pre></li>
+<li><p>运行puppet来检查配置是否生效</p>
+
+<pre><code> papply
+</code></pre></li>
+<li><p>检查memcached是否已经运行。</p>
+
+<pre><code> service memcached status
+</code></pre></li>
+</ol>
+
+
+<blockquote><p>模块具有特定的目录结构，但是并非所有这些目录都必须存在。</p></blockquote>
+
+<hr />
+
+<h4>第六节 使用数组语句</h4>
+
+<pre><code>1、puppet 数组定义
+
+$package  =  ['ruby1.8-dev',
+              'ruby1.8',
+  .....
+  .....
+]
+package  {$package:ensure  =&gt;  installed}
+
+2、执行puppet 命令，可见需要安装的软件包已经装好。
+3、使用散列Hash
+
+散列就像是一个数组，但每个元素都可以通过名称（键值）存储和搜索，代码如下
+
+$interface = {  'name'    =&gt; 'eth0'
+                'address'  =&gt; '192.168.28.148'
+}
+
+notify {  ""Interface ${interface['name']} has address ${interface['address']}":}
+
+4、使用split函数创建数组
+
+用户声明数组如下，
+$lunch = ['egg','beans','chips']
+
+define lunchprint(){
+  notify  { "Lunch included ${name}":  }
+}
+
+lunchprint  {  $lunch: }
+结果打印
+Lunch included egg
+Lunch included beans
+Lunch included chips
+
+Puppet可以使用split 函数将字符串拆分为数组，
+$menu = 'egg beans chips'
+$items = split($menu ,' ')
+lunchprint  {  $items:  }
+
+结果打印
+Lunch included egg
+Lunch included beans
+Lunch included chips
+
+split 有需要两个参数，第一个是需要拆分的字符，第二个是分隔字符（可以使字符也可以是字符串）。
+
+分割字符也可以是正则表达式，例如可以使用(管道符|)分割一组字符串
+
+$lunch = 'egg:beans,chips'
+$items = split($lunch,':|,') 
+</code></pre>
+
+<hr />
+
+<h4>第七节 使用条件语句</h4>
+
+<blockquote><p>可以在清单中设置变量来调整类的行为，比如在服务器A和服务器B可能需要不同的操作系统，
+这是我们可以用if语句</p></blockquote>
+
+<pre><code>    if  $::operatingsystem  ==  'ubuntu'  {
+      notify  {  'running on ubuntu ':  }
+    }  else  {
+      notify  {  'no ubuntu':  }
+    }
+</code></pre>
+
+<blockquote><p>if 关键字后为一个表达式 如果值为true则执行大括号内的内容,也可使用elseif</p></blockquote>
+
+<pre><code>    if  $::operatingsystem  ==  'ubuntu'  {
+      notify  {  'running on ubuntu ':  }
+    }  elseif  $::operatingsystem == 'debian'  {
+      notify  {  'close enough...':  }
+    }  else  {
+      notify  {  'no ubuntu':  }
+    }
+</code></pre>
+
+<blockquote><p>比较</p></blockquote>
+
+<ul>
+<li>可以使用==语法来检查两个值是否相等，如上述代码所示</li>
+<li>使用 != 来检查是否不相等</li>
+<li><p>使用 and  or 或 not 组合来实现复杂的逻辑表达式</p>
+
+<pre><code>  if  ($::uptime_days  &gt;  356)  and  ($::operatingsystem  ==  'ubuntu')  {
+
+  }
+</code></pre></li>
+<li><p>也可以使用正则表达式进行判断</p></li>
+</ul>
+
+
+<h4>第九节 使用选择器和case语句</h4>
+
+<blockquote><p>  虽然可以使用 if 来编写任何条件语句，但Puppet提供了一些其他的形式来帮助用户
+  更容易地编写表达条件语句：选择器（selector）和case语句。
+  查看一下代码：</p></blockquote>
+
+<pre><code>    $systemtype = $::operatingsystem?(
+      'Ubuntu'  =&gt;  'debianlike',
+      'Debian'  =&gt;  'debianlike',
+      'RedHat'  =&gt;  'redhatlike',
+      'Centos'  =&gt;  'redhatlike',
+      default   =&gt;  'unknown',
+    )
+    notify  {  "you have a ${systemtype} system"}
+</code></pre>
+
+<blockquote><p>选择器的操作符为 ？根据 $::operatingsystem的值为$systemtype选择不同的值，
+类似C语言的三元运算符，但是不仅仅是在两个值之间进行选择，而是可以根据需要有尽
+可能多的可选值。</p></blockquote>
+
+<pre><code>    查看一下代码
+
+    class debianlike{
+      notify  {  'special manifest for debian-like systems':}
+    }
+    class readhatlike{
+      notify  {  'special manifest for readhat-like systems':}
+    }
+    case $::operatingsystem  {
+      'ubuntu',
+      'debian':{
+        include debianlike
+      }
+      'redhat',
+      'fedora',
+      'centos':{
+        include redhatlike
+      }
+      default:{
+        notify  {  "i don\t know what kind of system you have":}
+      }
+    }
+</code></pre>
+
+<blockquote><p>case 语句
+与选择器不同，case不返回一个值，case语句非常适合根据某个表达式的值选择
+执行不同的代码。上述代码当使用case语句时，根据$operatingsystem的值
+引入了 debianlike类或者redhatlike类。</p>
+
+<p>puppet将$::operatingsystem与列表的值进行比较，列表的值可以使正则
+表达式，也可以字符串，当找到匹配项时就执行 大括号里边相关代码。
+默认语句 没有匹配项就执行default 语句。</p></blockquote>
+
+<h4>第十节 使用in运算符</h4>
+
+<pre><code>in 运算符可以用来测试一个字符串中是否包含另一个字符串，代码如下
+if  'spring' in 'springfield'
+如果包含则上述表达式的值为 true
+1、清单代码可以如下编写测试
+if $::operatingsystem in ['Ubuntu','Debian']{
+  notify  {  'Debian-type operating system detected':  }
+}elseif  $::operatingsystem in  ['RedHat',  'Fedora',  'SuSE',  'CentOS']{ 
+  notify  {  'RedHat-type operating system detected':  }
+}else  {'some other operationg system detected'}
+2、运行 puppet papply
+</code></pre>
+
+<hr />
+
+<h4>第十一节 使用正则表达式进行替换</h4>
+
+<pre><code>puppet通过regsubst函数提供了一种简单的方式来处理文本，在字符串中进行搜索和替换，或者从字符串中提取所需格式的子串，可以用来处理fact和从外部程序传进来的数据。（并未进行试验）
+
+1、配置清单中代码如下
+$class_c  =  regsubst($::ipaddress,'(.*)\..','\1.0')
+notify  {  " the network part of ${::ipaddress} is ${class_c}:"
+}
+2、运行 papply（我们自己编辑的命令）
+
+打印 the network part of 192.168.28.148 is 192.168.28.0:
+
+regsubst 至少需要三个参数 source（输入源）、pattern（匹配模式）、replacement（替换内容）
+此例子中 
+source为 $::ipaddress 值为192.168.28.148
+pattern为 (.*)\..
+replacement为 \1.0
+
+pattern将匹配整个IP地址，补货圆括号内的IP地址前三位，捕获的文本可以通过\1的形式replacement字符串中使用。
+所有配的字符都将被replacement替换
+也可以使用其它方法进行替换
+</code></pre>
+
+<hr />
+
+<h4>第五节 使用内联模板</h4>
+
+<h3>第三章</h3>
+
+<hr />
+
+<p>创建第一个puppet 配置</p>
+
+<h3>第四章 创建去中心化的puppet架构</h3>
+
+<hr />
+
+<blockquote><p>使用puppet最常见的方法就是运行一台Puppet Master 服务器，Puppet client连接到Puppet Master
+并接受各自的配置清单，但是，puppet Master并不是必须的，可以直接在配置清单文件上运行
+puppet apply 命令来应用变更</p></blockquote>
+
+<pre><code>    [root@cookbook5 puppet]# puppet apply /etc/puppet/modules/test/manifests/init.pp    
+Notice: Compiled catalog for cookbook5 in environment production in 0.01 seconds
+Notice: Finished catalog run in 0.01 seconds
+</code></pre>
+
+<blockquote><p>也就是说，如果能安排适当的清单文件分发到客户端上，就可以使用puppet直接执行，而不需要puppet
+Master来控制管理，</p></blockquote>
+
+<ul>
+<li>这消除了由于仅有一台主服务器而造成的性能瓶颈</li>
+<li>也消除了单点故障</li>
+<li>同时也避免了新加入客户机要办法SSL签名证书的问题</li>
+</ul>
+
+
+<h4>第一节 整合gitbub</h4>
+
+<ol>
+<li>在新机器中检出github仓库</li>
+<li><p>编写测试site.pp
+node  &lsquo;cookbook&rsquo;,  &lsquo;cookbook2&rsquo;  {
+file  {  &ldquo;/tmp/hello&rdquo;:
+ content  =>  &ldquo;hello world\n&rdquo;,
+}
+}</p></li>
+<li><p>运行命令：</p>
+
+<pre><code>     [root@cookbook5 tmp]# puppet apply test.pp 
+     Notice: Compiled catalog for cookbook5 in environment production in 0.12 seconds
+     Notice: /Stage[main]/Main/Node[cookbook5]/File[/tmp/hello]/ensure: defined content as '{md5}81d3135bd5022a4999c182b0440b86b2'
+     Notice: Finished catalog run in 0.05 seconds
+</code></pre></li>
+</ol>
+
+
+<h5>工作原理</h5>
+
+<ol>
+<li>新机器上创建一个puppet仓库副本。使用git clone</li>
+<li>在运行puppet前需要配置清单中关于新节点的声明 cookbook2 也就是新节点的hostname</li>
+<li>在新节点上执行相同命令，配置清单即生效</li>
+</ol>
+
+
+<h5>此处结论</h5>
+
+<ol>
+<li>现在已经可以很方便的将puppet基础设施扩展到另外一台节点，也可以扩展的任意多台。</li>
+<li>只需检出git仓库，并执行puppet apply 命令。</li>
+<li>这样做不需要多余的机器来作为puppet master</li>
+<li>我们需要节点能够自动从gitbub拉取清单，并自动执行这些配置清单。</li>
+</ol>
+
+
+<h4>第二节 编写脚本完成节点自动化</h4>
+
+<ol>
+<li>在puppet仓库中创建仓库中puppet模块module必须的目录（参看*标识）</li>
+</ol>
+
+
+<p>[root@cookbook5 tmp]# tree /opt/ning/gitpuppet/puppetest/puppet/</p>
+
+<p>├── manifests</p>
+
+<p>│   ├── nodes.pp</p>
+
+<p>│   └── site.pp</p>
+
+<p>├── modules *</p>
+
+<p>│   ├── puppet *</p>
+
+<p>│   │   ├── files *</p>
+
+<p>│   │   │   ├── papply.sh</p>
+
+<p>│   │   │   ├── pull-update.sh</p>
+
+<p>│   │   │   └── README</p>
+
+<p>│   │   └── manifests *</p>
+
+<p>│   │       └── init.pp</p>
+
+<ol>
+<li><p>根据上述目录结构创建 papply.sh文件
+[root@cookbook5 tmp]# cat  /puppet/modules/puppet/files/papply.sh</p>
+
+<pre><code>  #!/bin/sh
+  sudo puppet apply /opt/ning/gitpuppet/puppetest/puppet/manifests/site.pp  
+  --modulepath=/opt/ning/gitpuppet/puppetest/puppet/modules $*
+</code></pre></li>
+<li><p>创建 puppet的init.pp文件</p>
+
+<pre><code> [root@cookbook5 tmp]# vi init.pp 
+ class  puppet  {
+   file  {"/usr/local/bin/papply":
+     source  =&gt;  "puppet:///modules/puppet/papply.sh",
+     mode    =&gt;  "0755",
+ }
+
+ }
+</code></pre></li>
+<li><p>更改nodes.pp文件</p>
+
+<pre><code> [root@cookbook5 tmp]# cat nodes.pp 
+     node  'cookbook5'  {
+          include puppet
+     }
+</code></pre></li>
+<li>应用这些配置清单的更改</li>
+</ol>
+
+
+<p>puppet apply manifest/site.pp</p>
+
+<ol>
+<li>测试脚本是否工作正常。
+papply</li>
+</ol>
+
+
+<p>现在，当运行puppet时，只需要运行papply命令即可。</p>
+
+<h5>工作原理</h5>
+
+<ol>
+<li>在一台机器上运行puppet需要给puppet指定 要运行的清单文件位置
+puppet apply manifest/site.pp</li>
+<li><p>使用模块时，还需要给puppet指定模块的位置，使用modulepath参数</p>
+
+<pre><code>sudo puppet apply /opt/ning/gitpuppet/puppetest/puppet/manifests/site.pp  
+--modulepath=/opt/ning/gitpuppet/puppetest/puppet/modules $*
+</code></pre></li>
+<li>为了使用root 权限可能还需要添加sudo</li>
+<li>最后通过添加$* 参数，将所有module都作为参数传递给puppet</li>
+<li>由于输入的东西太多，所以可以将其脚本化，</li>
+<li>同时添加一个file资源，用来将papply部署到/usr/local/bin 目录并使其执行。</li>
+</ol>
+
+
+<h5>此处结论</h5>
+
+<p>1.现在已经可以在各个节点简单执行papply命令即可使配置清单生效</p>
+
+<h4>第三节 使用cron运行puppet</h4>
+
+<p> 通过当前的配置，已经可以管理团队中的puppet清单，通过github同步变更，使用papply脚本在客户机上手动配置变更。
+ 但是到目前为止，还需要手动登录到各个客户机更新git仓库，并重新运行puppet，接下来我们编写脚本，使每台机器可以自动更新并应用变更。
+思路就是使用cron作业，定期从仓库中拉去配置文件在有变更时运行puppet</p>
+
+<h5>准备工作</h5>
+
+<p>1.不要将gitbub公钥添加到puppet仓库，需要其它方式进行分发（可使用ansible）
+2.创建*标识的init.pp文件</p>
+
+<p>[root@cookbook5 tmp]# tree /opt/ning/gitpuppet/puppetest/puppet/</p>
+
+<p>/opt/ning/gitpuppet/puppetest/puppet/</p>
+
+<p>├── manifests</p>
+
+<p>│   ├── nodes.pp</p>
+
+<p>│   └── site.pp</p>
+
+<p>├── modules</p>
+
+<p>│   ├── puppet</p>
+
+<p>│   │   ├── files</p>
+
+<p>│   │   │   ├── papply.sh</p>
+
+<p>│   │   │   ├── pull-update.sh</p>
+
+<p>│   │   │   └── README</p>
+
+<p>│   │   └── manifests</p>
+
+<p>│   │       └── init.pp*</p>
+
+<blockquote><p>内容如下</p></blockquote>
+
+<pre><code>    [root@cookbook5 tmp]# vi  init.pp 
+    class  puppet  {
+      file  {"/usr/local/bin/papply":
+        source  =&gt;  "puppet:///modules/puppet/papply.sh",
+        mode    =&gt;  "0755",
+    }
+
+      file  {"/usr/local/bin/pull-update":
+        source  =&gt;  "puppet:///modules/puppet/pull-update.sh",
+        mode    =&gt;  "0755",
+      }
+      cron  {"run-puppet":
+        ensure   =&gt;  present,
+        user     =&gt;  "root",
+        command  =&gt;  "/usr/local/bin/pull-update",
+        minute   =&gt;  "*/2",
+        hour     =&gt;  "*",
+      }
+    }
+</code></pre>
+
+<ol>
+<li><p>创建pull-update.sh 文件</p>
+
+<pre><code> #!/bin/sh
+ cd /opt/ning/gitpuppet/puppetest
+ git pull &amp;&amp; papply
+</code></pre></li>
+<li><p>运行 puppet</p>
+
+<pre><code>     papply
+</code></pre></li>
+<li><p>测试pull-update 是否正常工作</p>
+
+<pre><code>     pull-update
+
+ [root@cookbook5 tmp]# pull-update 
+ Already up-to-date.
+ Notice: Compiled catalog for cookbook5 in environment production in 0.17 seconds
+ Notice: /Stage[main]/Puppet/File[/usr/local/bin/pull-update]/content: content changed '{md5}d46f4e058912bdef5d41571fd6f27bc2' to '{md5}40711b84a1ca5aa19d0cd4e3b19702f7'
+ Notice: Finished catalog run in 0.08 seconds
+</code></pre></li>
+</ol>
+
+
+<h4>工作原理</h4>
+
+<ol>
+<li>将拉去git pull 和papply动作全部写入pull-update脚本</li>
+<li>在所有主机上都分发该脚本</li>
+<li>通过cron创建定期运行的作业，定期执行pull-update脚本</li>
+</ol>
+
+
+<p>从而实现了自动化执行配置清单功能</p>
+
+<h6>#第四节 使用Rake引导puppet运行</h6>
+
+<pre><code>可免去ssh登录到客户机执行pull-update的操作
+</code></pre>
+
+<h6>#第五节  使用git hook检查puppet语法检查</h6>
+
+<pre><code>可避免提交puppet清单时出现错误代码，此处可以使用puppet parser validate 检查或者是puppet-lint
+</code></pre>
+
+<h1>Foreman V1.11</h1>
+
+<hr />
+
+<p>foreman 使用 ruby语言开发 ruby on rail</p>
+
+<h3>Foreman 架构</h3>
+
+<hr />
+
+<pre><code>    Foreman 安装后，包括一个可依赖的中心Foreman实例，用于提供Web GUI，节点配置，节点
+    初始化配置文件，等等。Foreman支持无人值守的完全自动化的安装过程。其中smart proxy 
+    和Foreman一起管理TFTP，DHCP，DNS，Puppet，Puppet CA，Salt和Chef
+</code></pre>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+Apr 29th, 2016</div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		<a class="addthis_button_tweet"></a>
+		
+		
+		
+	</div>
+	
+</div>
+
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    Guangning Sun
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+
+
+
+
+</body>
+</html>

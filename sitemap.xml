@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://guangningsun.github.io/blog/2016/04/29/puppet-cookbook/</loc>
+    <lastmod>2016-04-29T13:15:24+08:00</lastmod>
+  </url>
+  <url>
     <loc>http://guangningsun.github.io/blog/2016/04/20/puppetxue-xi/</loc>
     <lastmod>2016-04-20T11:07:25+08:00</lastmod>
   </url>
@@ -44,16 +48,19 @@
     <loc>http://guangningsun.github.io/404.html</loc>
   </url>
   <url>
-    <loc>http://guangningsun.github.io/</loc>
+    <loc>http://guangningsun.github.io/blog/archives/</loc>
   </url>
   <url>
-    <loc>http://guangningsun.github.io/blog/archives/</loc>
+    <loc>http://guangningsun.github.io/</loc>
   </url>
   <url>
     <loc>http://guangningsun.github.io/new-page/</loc>
   </url>
   <url>
     <loc>http://guangningsun.github.io/ning/</loc>
+  </url>
+  <url>
+    <loc>http://guangningsun.github.io/posts/2/</loc>
   </url>
   <url>
     <loc>http://guangningsun.github.io/assets/font-awesome/docs/index.html</loc>
