@@ -546,6 +546,18 @@ Notice: Finished catalog run in 0.03 seconds
 <pre><code>    配置清单：puppet用于配置服务器的主程序代码被称为配置清单
 </code></pre>
 
+<ul>
+<li>资源（resource）：puppet最基础的元素，资源可以是文件、服务、软件包、自定义脚本等。我们自己编写
+的程序也可以称为资源，（puppet就是用来处理资源与资源之间的依赖关系）。</li>
+<li>属性（attribute）：资源需要定义其相关的属性，来标记资源用来干什么</li>
+<li>类（class）：将过个资源组织起来重新定义，与JAVA等语言类似 思路相同</li>
+<li>模块（module）：多个类的集合。与JAVA语言类似，当类多时可以封装成一个模块</li>
+<li>变量（variable）：puppet中可以自定义变量（template中），也可以使用facter收集变量传递给puppet</li>
+<li>参数（paramter）:又称为参变量。变量的数值 例如（$hostname）</li>
+<li>节点（node）：puppet的每一个客户端</li>
+</ul>
+
+
 <h4>第一节 社区推荐的puppet风格</h4>
 
 <hr />
@@ -579,34 +591,82 @@ Notice: Finished catalog run in 0.03 seconds
     ensure  =&gt;  running,
 </code></pre>
 
-<h6>1.3 变量</h6>
+<h6>1.3 变量及变量引用</h6>
 
 <pre><code>    --当字符串引入变量时，要确保他们被大括{}号括起来，如
     source  =&gt;  "puppet:///modules/weget/${brand}.conf",
     否则puppet语法解析器无法解析变量，
 
+    --对变量的自我引用(不需要加双引号)
+        mode =&gt; $my_mode
+
     --///表示该路径在根目录下 且已经忽略了file文件夹 
+
+    --对变量赋值 $content = "some content\n"
 </code></pre>
 
 <h6>1.4 参数</h6>
 
-<pre><code>    --在参数行末尾要加逗号，最后一行也要添加,方便以后用户添加和调整参数
-    service  {'memcached':
-      ensure  =&gt;  running,
-      enable  =&gt;  true,
-    }
-    --当声明仅仅带有一个参数的资源时，要把全部声明写在一行，并且不要在末尾添加逗号
-    package  {  'puppet':ensure  =&gt;  installed}
-    --当声明多个参数时，需要让每一个参数各占据一行。
-    package  {  ‘rake’:
-      ensure    =&gt;  installed,
-      provider  =&gt;  gem,
-      require   =&gt;  Package['rubygem'],   
-    }
-    --所有参数的箭头都要与最长参数名所在行箭头对齐，如上图所示，方便剪切。
+<ul>
+<li><p>社区和部分教程对于参数理解不一致（社区的参数即为上述所介绍的属性）</p>
+
+<pre><code>  --在参数行末尾要加逗号，最后一行也要添加,方便以后用户添加和调整参数
+  service  {'memcached':
+    ensure  =&gt;  running,
+    enable  =&gt;  true,
+  }
+  --当声明仅仅带有一个参数的资源时，要把全部声明写在一行，并且不要在末尾添加逗号
+  package  {  'puppet':ensure  =&gt;  installed}
+  --当声明多个参数时，需要让每一个参数各占据一行。
+  package  {  ‘rake’:
+    ensure    =&gt;  installed,
+    provider  =&gt;  gem,
+    require   =&gt;  Package['rubygem'],   
+  }
+  --所有参数的箭头都要与最长参数名所在行箭头对齐，如上图所示，方便剪切。
+</code></pre></li>
+</ul>
+
+
+<h6>1.5主机命名</h6>
+
+<pre><code>    约定主机的命名是为了方便他人阅读，也能方便知道主机的功能，社区建议主机名为
+    字母、数字、句点、下划线、连字符，并符合正则表达式约定。
+
+    role-isp-idc-ip.centos.daomain.com
+    角色 运营商 机房 ip 系统  域名
 </code></pre>
 
-<h6>1.5符号链接</h6>
+<h6>1.6 模块命名</h6>
+
+<pre><code>    模块命名应该与类保持一致，必须小写字母开头，可以包括小写字母、下划线、数字。
+</code></pre>
+
+<h6>1.7 类的命名</h6>
+
+<pre><code>    推荐以应用名来命名，必须小写字母开头，可以包括小写字母、下划线、数字。
+</code></pre>
+
+<h6>1.8 资源的命名</h6>
+
+<pre><code>    可以是任意字符，但是对大小写敏感，主要受限于底层操作系统，为资源命名时，可以以其作用命名。
+
+    例如 
+    package  {'nginx':}
+    service  {'nginx':}
+    file  {'nginx.conf':}
+</code></pre>
+
+<h6>1.9 注释</h6>
+
+<pre><code>    支持多种注释风格 
+
+    可以用bash的 # 
+    也可以用C语言的 /*注释*/  
+    //注释
+</code></pre>
+
+<h6>1.9符号链接 （未测试）</h6>
 
 <pre><code>    当声明的file资源是符号链接这种类型时，要设置ensure =&gt; link 及 target 属性
     file  {  '/etc/php5/cli/php.ini':
@@ -628,9 +688,13 @@ Notice: Finished catalog run in 0.03 seconds
 <li>每行代码最好不得超过80个字符（检查会出错但是不影响使用）</li>
 <li><p>代码块中的参数箭头=>需要对齐(主要是风格统一，实际没有影响)</p>
 
-<p>  使用puppet-link来检查代码风格正确性
-  1、安装 gem install puppet-link
-  2、直接 使用命令 puppet-link site.pp检查site.pp文件的风格正确性</p></li>
+<p>  使用puppet-link来检查代码风格正确性</p>
+
+<p>  1、安装 gem install puppet-link</p>
+
+<p>  2、直接 使用命令 puppet-link site.pp检查site.pp文件的风格正确性</p>
+
+<p>  3、puppet parser validate 代替</p></li>
 </ul>
 
 
