@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://guangningsun.github.io/blog/2016/05/13/centos7an-zhuang-owncloud7huo-9/</loc>
+    <lastmod>2016-05-13T13:45:02+08:00</lastmod>
+  </url>
+  <url>
     <loc>http://guangningsun.github.io/blog/2016/04/29/puppet-cookbook/</loc>
     <lastmod>2016-04-29T13:15:24+08:00</lastmod>
   </url>

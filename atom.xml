@@ -4,7 +4,7 @@
   <title><![CDATA[Adolph孙广宁的博客]]></title>
   <link href="http://guangningsun.github.io/atom.xml" rel="self"/>
   <link href="http://guangningsun.github.io/"/>
-  <updated>2016-05-05T15:00:44+08:00</updated>
+  <updated>2016-05-13T13:45:48+08:00</updated>
   <id>http://guangningsun.github.io/</id>
   <author>
     <name><![CDATA[Guangning Sun]]></name>
@@ -12,6 +12,187 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[centos7安装owncloud7或9]]></title>
+    <link href="http://guangningsun.github.io/blog/2016/05/13/centos7an-zhuang-owncloud7huo-9/"/>
+    <updated>2016-05-13T13:45:02+08:00</updated>
+    <id>http://guangningsun.github.io/blog/2016/05/13/centos7an-zhuang-owncloud7huo-9</id>
+    <content type="html"><![CDATA[<p>Install CentOS 7 with default Minimal configuration then install all current updates:</p>
+
+<pre><code>yum -y update
+</code></pre>
+
+<p>Next,we need to installPHP, Apache web server and MySQL server and some php extensions:</p>
+
+<pre><code>yum install httpd php php-mysql mariadb-server mariadb sqlite php-dom php-mbstring php-gd php-pdo 
+</code></pre>
+
+<p>Set SELinux to allow OwnCloud to write the data:</p>
+
+<pre><code>setsebool -P httpd_unified 1
+</code></pre>
+
+<p>Allow web traffic through the firewall:</p>
+
+<pre><code>firewall-cmd --permanent --zone=public --add-service=http
+firewall-cmd --permanent --zone=public --add-service=https
+firewall-cmd --reload
+</code></pre>
+
+<p>Start Apache using the following command:</p>
+
+<pre><code>systemctl start httpd.service
+</code></pre>
+
+<p>Start MariaDBby issuing this command:</p>
+
+<pre><code>systemctl start mariadb.service
+</code></pre>
+
+<p>Auto start the service at system start-up:</p>
+
+<pre><code>systemctl enable httpd.service
+systemctl enable mariadb.service
+</code></pre>
+
+<p>Installation
+First, we need to downloadownCloud from official website. Run the following command.</p>
+
+<pre><code>wget https://download.owncloud.org/community/owncloud-9.0.0.tar.bz2
+</code></pre>
+
+<p>Extract the archive we just downloaded.</p>
+
+<pre><code>tar -jxvf owncloud-7.0.0.tar.bz2 -C /var/www/html/
+</code></pre>
+
+<p>Next we need to assign the permission for web serverto read and write the files on cloud directory.</p>
+
+<pre><code>chown -R apache.apache /var/www/html/owncloud/
+</code></pre>
+
+<p>DataBase configuration</p>
+
+<p>Configure the mariadb instance.</p>
+
+<pre><code>mysql_secure_installation;
+</code></pre>
+
+<p>Hit enter on any of these that have the capitalY.</p>
+
+<pre><code>Set root password?[Y/n]New password: databaserootpassword
+Re-enter new password: databaserootpassword
+Remove anonymous users?[Y/n]Y
+Disallow root login remotely?[Y/n]Y
+Remove test database and access to it?[Y/n]Y
+Reload privilege tables now?[Y/n]
+Create the ownCloud database and user.
+</code></pre>
+
+<p>Login to mysql server, Using the following command</p>
+
+<pre><code>mysql -u root -p
+</code></pre>
+
+<p>Next, we need to Create DataBase for ownCloud and grand permission for ownCloud user.</p>
+
+<pre><code>mysql&gt; create database owncloud;
+mysql&gt; create user 'owncloud'@'LOCALHOST' identified by'YOUR-DATABASE-PASSWORD'; 
+mysql&gt; grant all on owncloud.* to 'owncloud'@'LOCALHOST';
+mysql&gt; flush privileges;
+mysql&gt; quit;
+</code></pre>
+
+<p>Apache server configuration
+Open an externalconfiguration file for ownCloud in your favorite editor, I’m using vim.</p>
+
+<pre><code>vim /etc/httpd/conf.d/owncloud.conf
+</code></pre>
+
+<p>Add the following lines in the config file.</p>
+
+<pre><code>&lt;IfModule mod_alias.c&gt;
+    Alias /owncloud /var/www/html/owncloud
+&lt;/IfModule&gt;
+&lt;Directory “/var/www/html/owncloud”&gt;
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Order allow,deny
+    allow from all
+&lt;/Directory&gt;
+</code></pre>
+
+<p>如果要检查apache有没有安装，可以用命令检查apache的安装包是否安装上。</p>
+
+<pre><code># rpm -qa | grep httpd
+</code></pre>
+
+<p>如果想看安装的运行级别。</p>
+
+<pre><code># chkconfig --list httpd
+</code></pre>
+
+<p>如果想看有没有启动。</p>
+
+<pre><code># service httpd status
+</code></pre>
+
+<p>etc/httpd是apache的安装目录，</p>
+
+<p>如果发现有.htaccess设置不正确的提示，可以这样：
+打开httpd.conf(在那里? APACHE目录的CONF目录里面),用vim打开后,查找</p>
+
+<pre><code>Options FollowSymLinks
+
+AllowOverride None
+</code></pre>
+
+<p>改为</p>
+
+<pre><code>Options FollowSymLinks
+
+AllowOverride All
+</code></pre>
+
+<p>然后去掉下面的注释</p>
+
+<pre><code>LoadModule rewrite_modulemodules/mod_rewrite.so
+</code></pre>
+
+<p>.htaccess可以更改上传文件大小，默认的是2M</p>
+
+<p>上传大小限制(设置成10G)</p>
+
+<p>编辑文件：/var/www/html/owncloud/.htaccess</p>
+
+<pre><code>php_value upload_max_filesize 10240M
+
+php_value post_max_size 10240M
+
+php_value memory_limit 2048M
+</code></pre>
+
+<p>Restart all apache and mariaDB services:</p>
+
+<pre><code>systemctl start httpd.service
+systemctl start mariadb.service
+</code></pre>
+
+<p>OwnCloud configuration
+Open up your favorite browser and paste</p>
+
+<pre><code>http://your_ip_address/owncloud
+</code></pre>
+
+<p>or</p>
+
+<pre><code>http://your_Domain.com/owncloud. 
+</code></pre>
+
+<p>It will shows the initial owncloud setup page.it must be configured before going to live.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[puppet cookbook]]></title>
@@ -2955,7 +3136,7 @@ boto文件在本文的附件中可以使用
 <h3>向被授权的主机上拷贝</h3>
 
 <ul>
-<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#109;&#x61;&#105;&#108;&#116;&#111;&#x3a;&#x72;&#111;&#x6f;&#116;&#64;&#x31;&#57;&#50;&#46;&#x31;&#54;&#x38;&#46;&#50;&#x38;&#46;&#x31;&#x33;&#x30;">&#114;&#111;&#111;&#116;&#64;&#x31;&#57;&#50;&#x2e;&#49;&#x36;&#x38;&#x2e;&#x32;&#56;&#x2e;&#x31;&#x33;&#x30;</a></li>
+<li>ssh-copy-id -i .ssh/id_rsa.pub <a href="&#109;&#x61;&#105;&#108;&#x74;&#111;&#58;&#x72;&#x6f;&#x6f;&#x74;&#64;&#49;&#x39;&#50;&#x2e;&#49;&#x36;&#x38;&#46;&#x32;&#x38;&#46;&#49;&#x33;&#48;">&#114;&#111;&#x6f;&#116;&#x40;&#49;&#x39;&#50;&#46;&#x31;&#54;&#x38;&#46;&#x32;&#56;&#x2e;&#49;&#51;&#48;</a></li>
 </ul>
 
 

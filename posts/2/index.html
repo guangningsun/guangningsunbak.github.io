@@ -7,8 +7,9 @@
 	<meta name="author" content="Guangning Sun">
 
 	
-	<meta name="description" content="单点安装部署ceph实验过程 1.官方推荐Ubuntu12.0.4服务器版本操作系统。 下载地址
-http://releases.ubuntu.com/12.04/ubuntu-12.04.5-alternate-amd64.iso.torrent 2.更新系统source 命令：sudo &hellip;">
+	<meta name="description" content="Ceph简介及研究计划书 简介 系统架构 Ceph 生态系统架构可以划分为四部分： client：客户端（数据用户）
+mds：Metadata server cluster，元数据服务器（缓存和同步分布式元数据）
+osd：Object storage cluster，对象存储集群（ &hellip;">
 	
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -75,6 +76,393 @@ http://releases.ubuntu.com/12.04/ubuntu-12.04.5-alternate-amd64.iso.torrent 2.�
 		
 	
 	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/01/22/abstract-ceph/">
+		
+			Abstract_ceph</a>
+	</h2>
+	<div class="entry-content">
+		<h1>Ceph简介及研究计划书</h1>
+
+<h2>简介</h2>
+
+<h3>系统架构</h3>
+
+<p>Ceph 生态系统架构可以划分为四部分：</p>
+
+<ul>
+<li>client：客户端（数据用户）</li>
+<li>mds：Metadata server cluster，元数据服务器（缓存和同步分布式元数据）</li>
+<li>osd：Object storage cluster，对象存储集群（将数据和元数据作为对象存储，执行其他关键职能）</li>
+<li>mon：Cluster monitors，集群监视器（执行监视功能）</li>
+</ul>
+
+
+<p><img src="http://b.hiphotos.baidu.com/baike/c0%3Dbaike80%2C5%2C5%2C80%2C26/sign=cfb8f11a0a7b020818c437b303b099b6/91ef76c6a7efce1b3ca81175af51f3deb58f658a.jpg" alt="Alt text" /></p>
+
+<pre><code>                  图1 ceph生态架构图
+</code></pre>
+
+<h1>各组件浅析</h1>
+
+<ul>
+<li>各组件作用可参考
+<a href="http://blog.csdn.net/jackjones_008/article/details/43303667">http://blog.csdn.net/jackjones_008/article/details/43303667</a></li>
+<li>系列讲解和官方文档详解
+<a href="http://docs.ceph.com/docs/master/start/intro/">http://docs.ceph.com/docs/master/start/intro/</a></li>
+</ul>
+
+
+<h3>Ceph客户端 client</h3>
+
+<pre><code>   因为 Linux 显示文件系统的一个公共界面（通过虚拟文件系统交换机 [VFS]），Ceph 的用户透视图就是透明的。管理员的透视图肯定是不同的，考虑到很多服务器会包含存储系统这一潜在因素。从用户的角度看，他们访问大容量的存储系统，却不知道下面聚合成一个大容量的存储池的元数据服务器，监视器，还有独立的对象存储设备。用户只是简单地看到一个安装点，在这点上可以执行标准文件 I/O。Ceph 文件系统 — 或者至少是客户端接口 — 在 Linux 内核中实现。值得注意的是，在大多数文件系统中，所有的控制和智能在内核的文件系统源本身中执行。但是，在 Ceph 中，文件系统的智能分布在节点上，这简化了客户端接口，并为 Ceph 提供了大规模（甚至动态）扩展能力。Ceph 使用一个有趣的备选，而不是依赖分配列表（将磁盘上的块映射到指定文件的元数据）。Linux 透视图中的一个文件会分配到一个来自元数据服务器的 inode number（INO），对于文件这是一个唯一的标识符。然后文件被推入一些对象中（根据文件的大小）。使用 INO 和 object number（ONO），每个对象都分配到一个对象 ID（OID）。在 OID 上使用一个简单的哈希，每个对象都被分配到一个放置组。放置组（标识为 PGID）是一个对象的概念容器。最后，放置组到对象存储设备的映射是一个伪随机映射，使用一个叫做 Controlled Replication Under Scalable Hashing（CRUSH）的算法。这样一来，放置组（以及副本）到存储设备的映射就不用依赖任何元数据，而是依赖一个伪随机的映射函数。这种操作是理想的，因为它把存储的开销最小化，简化了分配和数据查询。分配的最后组件是集群映射。集群映射 是设备的有效表示，显示了存储集群。有了 PGID 和集群映射，您就可以定位任何对象。
+</code></pre>
+
+<h3>Ceph元数据服务器 mds</h3>
+
+<pre><code>    元数据服务器（cmds）的工作就是管理文件系统的名称空间。虽然元数据和数据两者都存储在对象存储集群，但两者分别管理，支持可扩展性。事实上，元数据在一个元数据服务器集群上被进一步拆分，元数据服务器能够自适应地复制和分配名称空间，避免出现热点。如图 4 所示，元数据服务器管理名称空间部分，可以（为冗余和性能）进行重叠。元数据服务器到名称空间的映射在 Ceph 中使用动态子树逻辑分区执行，它允许 Ceph 对变化的工作负载进行调整（在元数据服务器之间迁移名称空间）同时保留性能的位置。
+
+
+图 4. 元数据服务器的 Ceph 名称空间的分区
+首页：元数据服务器的 Ceph 名称空间的分区
+但是因为每个元数据服务器只是简单地管理客户端人口的名称空间，它的主要应用就是一个智能元数据缓存（因为实际的元数据最终存储在对象存储集群中）。进行写操作的元数据被缓存在一个短期的日志中，它最终还是被推入物理存储器中。这个动作允许元数据服务器将最近的元数据回馈给客户（这在元数据操作中很常见）。这个日志对故障恢复也很有用：如果元数据服务器发生故障，它的日志就会被重放，保证元数据安全存储在磁盘上。元数据服务器管理 inode 空间，将文件名转变为元数据。元数据服务器将文件名转变为索引节点，文件大小，和 Ceph 客户端用于文件 I/O 的分段数据（布局）。
+</code></pre>
+
+<h3>Ceph 监视器 mon</h3>
+
+<pre><code>   Ceph 包含实施集群映射管理的监视器，但是故障管理的一些要素是在对象存储本身中执行的。当对象存储设备发生故障或者新设备添加时，监视器就检测和维护一个有效的集群映射。这个功能按一种分布的方式执行，这种方式中映射升级可以和当前的流量通信。Ceph 使用 Paxos，它是一系列分布式共识算法。
+</code></pre>
+
+<h3>Ceph对象存储 osd</h3>
+
+<pre><code>    和传统的对象存储类似，Ceph 存储节点不仅包括存储，还包括智能。传统的驱动是只响应来自启动者的命令的简单目标。但是对象存储设备是智能设备，它能作为目标和启动者，支持与其他对象存储设备的通信和合作。从存储角度来看，Ceph 对象存储设备执行从对象到块的映射（在客户端的文件系统层中常常执行的任务）。这个动作允许本地实体以最佳方式决定怎样存储一个对象。Ceph 的早期版本在一个名为 EBOFS 的本地存储器上实现一个自定义低级文件系统。这个系统实现一个到底层存储的非标准接口，这个底层存储已针对对象语义和其他特性（例如对磁盘提交的异步通知）调优。今天，B-tree 文件系统（BTRFS）可以被用于存储节点，它已经实现了部分必要功能（例如嵌入式完整性）。因为 Ceph 客户实现 CRUSH，而且对磁盘上的文件映射块一无所知，下面的存储设备就能安全地管理对象到块的映射。这允许存储节点复制数据（当发现一个设备出现故障时）。分配故障恢复也允许存储系统扩展，因为故障检测和恢复跨生态系统分配。Ceph 称其为 RADOS
+</code></pre>
+
+<hr />
+
+<h3>ceph工作原理浅析</h3>
+
+<p>有待后续补充</p>
+
+<hr />
+
+<h3>ceph与HDFS对比浅析</h3>
+
+<pre><code>   Ceph对比HDFS优势在于易扩展，无单点。HDFS是专门为Hadoop这样的云计算而生，在离线批量处理大数据上有先天的优势，而Ceph是一个通用的实时存储系统。虽然Hadoop可以利用Ceph作为存储后端，但整合过程不及HDFS轻便，且执行计算任务上性能还是略逊于HDFS
+</code></pre>
+
+<p><code>有待后续补充</code></p>
+
+<h3>ceph安装部署</h3>
+
+<pre><code>    部署可分为单节点部署和多节点部署，软件版本可从测试环境和生产环境来区分，具体部署过程可参考官方文档和一些博客，部署中遇到问题再详细分析。
+</code></pre>
+
+<ul>
+<li>官方安装文档 <a href="http://docs.ceph.com/docs/master/start/">http://docs.ceph.com/docs/master/start/</a></li>
+<li>手动安装文档  <a href="http://docs.ceph.com/docs/master/install/">http://docs.ceph.com/docs/master/install/</a></li>
+<li>可参考博客<br/>
+<a href="http://blog.csdn.net/i_chips/article/details/19985795">http://blog.csdn.net/i_chips/article/details/19985795</a>
+<a href="http://blog.csdn.net/pc620/article/details/9002045">http://blog.csdn.net/pc620/article/details/9002045</a></li>
+</ul>
+
+
+<p><code>详细部署步骤可参考《ceph部署实验过程》文档</code></p>
+
+<h3>ceph整体架构分析工作原理分析</h3>
+
+<p><code>有待后续补充</code></p>
+
+<h3>ceph API接口分析</h3>
+
+<p><code>有待后续补充</code></p>
+
+<h3>ceph 开发解析</h3>
+
+<p><code>有待后续补充</code></p>
+
+<h3>硬件配置推荐</h3>
+
+<ul>
+<li><p>小型测试集群最低配置推荐</p>
+
+<p> Ceph可以运行在廉价的普通硬件上，小型生产集群和开发集群可以在一般的硬件上。</p></li>
+<li><table>
+<thead>
+<tr>
+<th>组件 </th>
+<th> 标准 </th>
+<th> 最低配置推荐</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ceph-osd     </td>
+<td> 处理器          </td>
+<td> 1X 64位AMD-64/i386的双核</td>
+</tr>
+<tr>
+<td></td>
+<td> RAM           </td>
+<td> 每个守护进程需要500 MB</td>
+</tr>
+<tr>
+<td></td>
+<td>磁盘空间</td>
+<td>1x storage drive per daemon</td>
+</tr>
+<tr>
+<td></td>
+<td>网络</td>
+<td>2个1GB以太网网卡</td>
+</tr>
+<tr>
+<td>ceph-mds         </td>
+<td> 处理器          </td>
+<td> 1X 64位AMD-64/i386的双核</td>
+</tr>
+<tr>
+<td></td>
+<td> RAM           </td>
+<td> 每个守护进程最低1GB</td>
+</tr>
+<tr>
+<td></td>
+<td>磁盘空间</td>
+<td>每个守护进程1MB</td>
+</tr>
+<tr>
+<td></td>
+<td>网络</td>
+<td>2个1GB以太网网卡</td>
+</tr>
+<tr>
+<td>ceph-mon     </td>
+<td> 处理器          </td>
+<td> 1X 64位AMD-64/i386的双核</td>
+</tr>
+<tr>
+<td></td>
+<td> RAM           </td>
+<td> 每个守护进程最低1GB</td>
+</tr>
+<tr>
+<td></td>
+<td>磁盘空间</td>
+<td>每个守护进程10GB</td>
+</tr>
+<tr>
+<td></td>
+<td>网络</td>
+<td>2个1GB以太网网卡</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li><p>生产集群最低标准配置推荐</p>
+
+<p>PB级生产集群也可以使用普通硬件，但应该配备更多内存、CPU和数据存储空间来解决流量压力。一个2012年的Ceph集群项目使用了两个相当强悍的OSD硬件配置，和稍逊的监视器配置。</p></li>
+<li><table>
+<thead>
+<tr>
+<th>组件 </th>
+<th> 标准 </th>
+<th> 最低配置推荐</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>戴尔PE R510   </td>
+<td>处理器      </td>
+<td>2个64位四核Xeon处理器</td>
+</tr>
+<tr>
+<td></td>
+<td>RAM</td>
+<td>   16 GB</td>
+</tr>
+<tr>
+<td></td>
+<td>磁盘空间   </td>
+<td>8个2TB驱动器。1个操作系统，7个存储</td>
+</tr>
+<tr>
+<td></td>
+<td>客户端网络</td>
+<td>       2个1GB以太网网卡</td>
+</tr>
+<tr>
+<td></td>
+<td>OSD网络</td>
+<td> 2个1GB以太网网卡</td>
+</tr>
+<tr>
+<td></td>
+<td>管理网络   </td>
+<td>   2个1GB以太网网卡</td>
+</tr>
+<tr>
+<td>戴尔PE R515</td>
+<td>      处理器   </td>
+<td>   1X 16核 Opteron CPU</td>
+</tr>
+<tr>
+<td></td>
+<td>RAM    </td>
+<td>16GB</td>
+</tr>
+<tr>
+<td></td>
+<td>os存储   </td>
+<td>1X 500GB硬盘的操作系统。</td>
+</tr>
+<tr>
+<td></td>
+<td>磁盘空间   </td>
+<td>12X 3TB硬盘的存储</td>
+</tr>
+<tr>
+<td></td>
+<td>客户端网络</td>
+<td>       2个1GB以太网网卡</td>
+</tr>
+<tr>
+<td></td>
+<td>OSD网络  </td>
+<td>2个1GB以太网网卡</td>
+</tr>
+<tr>
+<td></td>
+<td>管理网络   </td>
+<td>   2个1GB以太网网卡</td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+
+
+<h3>操作系统推荐</h3>
+
+<p>Linux内核</p>
+
+<ul>
+<li>Ceph的核心客户端目前建议：
+
+<ol>
+<li>v4.1.4.或更高版本</li>
+<li>v3.16.3或更高版本</li>
+</ol>
+</li>
+<li>btrfs文件系统： B-tree File System (Btrfs)如果想在btrfs上运行Ceph，我们推荐使用一个最新的Linux内核（V3.14或更高版本）</li>
+</ul>
+
+
+<p>系统平台
+       下面的表格展示了Ceph需求和各种Linux发行版的对应关系。一般来说，Ceph对内核和系统初始化阶段的依赖很少（如sysvinit，upstart, systemd）。</p>
+
+<ul>
+<li><table>
+<thead>
+<tr>
+<th>Distro    </th>
+<th>Release    </th>
+<th>Code Name  </th>
+<th>Kernel </th>
+<th>Notes  </th>
+<th>Testing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CentOS      </td>
+<td>7  </td>
+<td>N/A</td>
+<td>   linux-3.10.0    </td>
+<td>   </td>
+<td>B, I, C</td>
+</tr>
+<tr>
+<td>Debian  </td>
+<td>8.0    </td>
+<td>Jessie</td>
+<td>    linux-3.16.0</td>
+<td>   </td>
+<td>   B, I</td>
+</tr>
+<tr>
+<td>Fedora</td>
+<td> 22  </td>
+<td>N/A    </td>
+<td>linux-3.14.0   </td>
+<td></td>
+<td>  B, I</td>
+</tr>
+<tr>
+<td>RHEL    </td>
+<td>7  </td>
+<td>Maipo  </td>
+<td>linux-3.10.0   </td>
+<td></td>
+<td>  B, I</td>
+</tr>
+<tr>
+<td>Ubuntu  </td>
+<td>14.04  </td>
+<td>Trusty Tahr    </td>
+<td>linux-3.13.0</td>
+<td></td>
+<td> B, I, C</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li><p>详细操作系统推荐可查询</p></li>
+</ul>
+
+
+<p> <a href="http://docs.ceph.com/docs/master/start/os-recommendations/">http://docs.ceph.com/docs/master/start/os-recommendations/</a></p>
+
+<h2>- 附注</h2>
+
+<ol>
+<li>默认内核btrfs版本较老，不推荐用于Ceph-osd存储节点；要升级到推荐的内核，或者改用xfs、ext4。</li>
+<li>默认内核带的Ceph客户端较老，不推荐做内核空间客户端（内核RBD或Ceph文件系统），请升级到推荐内核。</li>
+<li>已安装的glibc版本不支持syncfs（2）系统调用，同一台机器上使用xfs或ext4的Ceph-osd守护进程性能一般，它可以更好。</li>
+</ol>
+
+
+<h2>- 测试</h2>
+
+<ol>
+<li>B：我们持续地在这个平台上编译所有分支、做基本单元测试；也为这个平台构建可发布软件包。</li>
+<li>I： 我们在这个平台上做基本的安装和功能测试。</li>
+<li>C：我们在这个平台上持续地做全面的功能、退化、压力测试，包括开发分支、预发布版本、正式发布版本。</li>
+</ol>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+Jan 22nd, 2016</div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
 
 
     <article class="post">
